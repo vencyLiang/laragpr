@@ -1,6 +1,32 @@
-@extends('layouts.app')
+<!--<script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>-->
 
+@extends('layouts.app')
 @section('content')
+    <script>
+        //var jQuery = jQuery.noConflict();
+        function ajax_check_invite(){
+            $.ajax({
+                'url':"{{ route('checkinvite') }}",
+                'type':"get",
+                'data': {'up_invite_code':$('#up_invite_code').val()},
+                'success':function (response) {
+                    if (response === '0'){
+                        $('#check_tip').html("<span style='color:red;'><b>邀请码无效</b></span>")
+                        $("#submitBtn").attr('disabled','disabled');
+                    }else{
+                        $('#check_tip').html("<span style='color:green;'><b>邀请码有效</b></span>")
+                        $("#submitBtn").removeAttr('disabled');
+                    }
+                }
+            })
+        }
+        $(function(){
+            ajax_check_invite();
+            $('#up_invite_code').bind('input propertychange',function () {
+                ajax_check_invite();
+            })
+        })
+    </script>
 <div class="container">
     <div class="row justify-content-center">
         <div class="col-md-8">
@@ -66,7 +92,7 @@
 
                             <div class="col-md-6">
                                 <input id="up_invite_code" type="text" class="form-control{{ $errors->has('up_invite_code') ? ' is-invalid' : '' }}" name="up_invite_code" @if (isset($up_invite_code)) value="{{ $up_invite_code}}" @endif required>
-
+                                <div id = 'check_tip'></div>
                                 @if ($errors->has('up_invite_code'))
                                     <span class="invalid-feedback" role="alert">
                                         <strong>{{ $errors->first('up_invite_code') }}</strong>
@@ -77,7 +103,7 @@
 
                         <div class="form-group row mb-0">
                             <div class="col-md-6 offset-md-4">
-                                <button type="submit" class="btn btn-primary">
+                                <button type="submit" class="btn btn-primary"  id="submitBtn">
                                     {{ __('Register') }}
                                 </button>
                             </div>
@@ -89,3 +115,4 @@
     </div>
 </div>
 @endsection
+

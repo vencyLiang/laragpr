@@ -2,12 +2,11 @@
 
 namespace App\Http\Controllers\Auth;
 
-use App\User;
+use App\Models\User;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Foundation\Auth\RegistersUsers;
-use Illuminate\Http\Request;
 
 class RegisterController extends Controller
 {
@@ -29,6 +28,7 @@ class RegisterController extends Controller
      *
      * @var string
      */
+
     protected $redirectTo = '/';
 
     /**
@@ -61,28 +61,26 @@ class RegisterController extends Controller
      * Create a new user instance after a valid registration.
      *
      * @param  array  $data
-     * @return \App\User
+     * @return \App\Models\User
      */
     protected function create(array $data)
     {
-        return User::create([
+        $user = User::create([
             'name' => $data['name'],
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
-            'up_invite_code'=> $data['up_invite_code']
+            'up_invite_code' => $data['up_invite_code'],
+            'register_time'  => time()
         ]);
+        return $user;
     }
 
     protected function showRegistrationForm(){
+            $up_invite_code = NULL;
         if (isset($_GET['up_invite_code'])){
             $up_invite_code = $_GET['up_invite_code'];
-            return view('auth.register',compact(['up_invite_code']));
-        }else{
-            return view('auth.register');
         }
+        return view('auth.register',compact(['up_invite_code']));
+    }
 
-    }
-    protected function ajax_check_invite_code(Request $request){
-        $upInviteCode = $request->up_invite_code;
-    }
 }

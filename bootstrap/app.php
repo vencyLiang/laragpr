@@ -11,6 +11,7 @@
 |
 */
 require_once __DIR__ . '/helpers.php';
+require_once __DIR__ . '/constants.php';
 $app = new Illuminate\Foundation\Application(
     realpath(__DIR__.'/../')
 );

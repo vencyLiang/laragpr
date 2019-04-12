@@ -1,0 +1,120 @@
+<?php
+namespace App\Http\Controllers;
+use App\Models\User;
+use Illuminate\Database\Eloquent\Collection as Collection;
+use Illuminate\Support\Facades\DB;
+use App\Models\Log;
+use Exception;
+class ActivateController extends Controller{
+
+    /**功能：对满足条件的注册用户进行激活，生成邀请码，更新上下级对应关系，并生成层级路径。
+     * @param User $user
+     * @return bool
+     */
+    public function activate(User $user){
+          //设定邀请码；
+          $invite_code = new InviteCodesController();
+          $activationInfo['invite_code'] = $invite_code->generate_invite_code($user->id) ;
+          //设定激活状态；
+          $activationInfo['activation_status'] = '1';
+          //获取激活时间；
+          $activationInfo['activate_time']  = time();
+          //如果上级邀请码为平台邀请码，则新开分区
+          $up_invite_code = $user->up_invite_code;
+          if($up_invite_code === PLATFORM_INVITE_CODE){
+              $activationInfo['pid'] = 0;
+              $activationInfo['path'] = '0-'.$user->id;
+              $activationInfo['root_id'] = $user->id;
+          }else{
+              //获取有相同上级激活码的用户
+              $siblingsCollection = User::Where('up_invite_code',$up_invite_code)->where('activation_status','1')->get();
+              $siblingsNum = $siblingsCollection->count();
+              //如果用户少于三个，则插入到同一个上级用户下。
+              if($siblingsNum < 3){
+                  $parentInfo = User::where('invite_code',$up_invite_code)->first();
+                  $activationInfo['pid'] = $parentInfo->id;
+                  $activationInfo['path'] = "$parentInfo->path-$user->id";
+                  $activationInfo['root_id'] = $parentInfo->root_id;
+
+              }else{
+                  $parentUser = $this->down_position($siblingsCollection);
+                  $activationInfo['pid'] = $parentUser->id;
+                  $activationInfo['path'] = "$parentUser->path-$user->id";
+              }
+          }
+          DB::beginTransaction();
+          try{
+              $res = $user->update($activationInfo);
+              if($res) {
+                  $upUids = $user->get_all_parentsIdArr();
+                  $relationArr = [];
+                  foreach ($upUids as $k => $uid) {
+                      $relationArr[] = ['uid' => $user->id, 'up_uid' => $uid, 'level' => $k + 1];
+                  }
+                  DB::table("user_relation")->insert($relationArr);
+                  Log::create([
+                      //类型：激活；
+                      'type' => 0,
+                      //触发的用户；
+                      'trigger_user_id' => $user->id,
+                      //状态：成功；
+                      'status' => 1,
+                  ]);
+                  DB::commit();
+              }else{
+                  throw new Exception("激活失败！");
+              }
+          }catch (Exception $exception){
+              DB::rollBack();
+              Log::create([
+                  //类型：激活；
+                  'type'=> 0,
+                  //触发的用户；
+                  'trigger_user_id' => $user->id,
+                  //状态：异常；
+                  'status' => 0,
+                  'message'=> $exception->getMessage()
+              ]);
+              return false;
+          }
+          return true;
+    }
+
+    /**功能：实现用户以某邀请码激活后的滑落动作；
+     * @param $collection //上级用户的下级子用户结果集。
+     * @return mixed
+     */
+    public function down_position(Collection $collection){
+        $subItems = [];
+        $subItemsCounts = [];
+        foreach($collection as $item) {
+            $subItemsCollection = User::where('pid', $item->id)->get();
+            $subItems[$item->invite_code] = $subItemsCollection;
+            $subItemsCounts[$item->invite_code] = $subItemsCollection->count();
+        }
+        if(max($subItemsCounts)!= ($min = min($subItemsCounts))){
+            $minItemsArr = [];
+            do{
+               $minIndex = array_search($subItemsCounts,$min);
+               if($minIndex){
+                   $minItemsArr[] = array_search($subItemsCounts,$min);
+                   unset($subItemsCounts[$minIndex]);
+                  }
+            }while($minIndex);
+            $parentUser = User::where('activate_status','1')->where(function($query)use($minItemsArr){
+                $query->whereIn('invite_code',$minItemsArr);})->orderBy('active_time','asc')->offset(0)->limit(1)->first();
+            return $parentUser;
+        }else{
+            if($min<3){
+                $possiblePositionArr = array_keys($subItems);
+                $parentUser = User::where('activate_status','1')->where(function($query)use($possiblePositionArr){
+                    $query->whereIn('invite_code',$possiblePositionArr);})->orderBy('active_time','asc')->offset(0)->limit(1)->first();
+                return $parentUser;
+              }else{
+                $allSubItemsCollection = User::where('activate_status','1')->whereIn('up_invite_code',$collection->pluck('invite_code'))->get();
+                return $this->down_position($allSubItemsCollection);
+            }
+        }
+    }
+
+}
