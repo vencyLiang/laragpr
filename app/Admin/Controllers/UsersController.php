@@ -74,7 +74,7 @@ class UsersController extends Controller
     }
     public function  store()
     {
-        return User::create(Input::all());
+        return $this->createForm()->store();
     }
 
     public function  update($id)
