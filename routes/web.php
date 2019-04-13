@@ -15,5 +15,5 @@ Route::get('/', 'PagesController@root')->name('root');
 Auth::routes();
 Route::get('/checkinvite','InvitecodesController@ajax_check_invite_code')->name('checkinvite');
 Route::resource('users', 'UserController', ['only' => ['show', 'update', 'edit']]);
-
+Route::resource('systems','SystemController');
 

@@ -70,7 +70,6 @@ class RegisterController extends Controller
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
             'up_invite_code' => $data['up_invite_code'],
-            'register_time'  => time()
         ]);
         return $user;
     }
