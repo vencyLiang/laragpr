@@ -99,13 +99,17 @@ class UsersController extends Controller
         $grid->up_invite_code('上级邀请码');
         $grid->invite_code('邀请码');
         $grid->pid('上级id')->sortable();
-        $grid->activation_status('激活状态')->sortable();
+        $states = [
+            'on'  => ['value' => '1', 'text' => '已激活', 'color' => 'success'],
+            'off' => ['value' => '0', 'text' => '未激活', 'color' => 'danger'],
+        ];
+        $grid->activation_status('激活状态')->switch($states)->sortable();
         $grid->register_time('注册时间')->sortable();
         $grid->activate_time('激活时间')->sortable();
         $grid->account_bonus('余额')->sortable();
         $grid->rows(function (Grid\Row $row) {
             if ($row->id % 2) {
-                   $row->setAttributes(['style' => 'color:red;']);
+                  // $row->setAttributes(['style' => 'background-color:skyblue;']);
             }
         });
         $grid->filter(function (Grid\Filter $filter) {
@@ -116,8 +120,6 @@ class UsersController extends Controller
                 $filter->like('email','邮箱');
                 $filter->like('phone_num','电话号码');
                 $filter->like('platform_wallet_address','平台钱包地址');
-
-
             });
 
             $filter->column(1/2, function ($filter) {
@@ -192,22 +194,26 @@ class UsersController extends Controller
     protected function updateForm()
     {
         $form = new Form(new User);
-        $form->text('name', 'Name');
-        $form->email('email', 'Email');
-        $form->password('password', 'Password');
-        $form->text('phone_num', 'Phone num');
-        $form->text('platform_wallet_address', 'Platform wallet address');
-        $form->text('user_wallet_address', 'User wallet address');
-        $form->text('withdraw_password', 'Withdraw password');
-        $form->text('up_invite_code', 'Up invite code');
-        $form->text('invite_code', 'Invite code');
-        $form->number('pid', 'Pid');
-        $form->text('path', 'Path');
-        $form->text('activation_status', 'Activation status');
-        $form->number('register_time', 'Register time');
-        $form->number('activate_time', 'Activate time');
-        $form->number('account_bonus', 'Account bonus');
-        $form->text('remember_token', 'Remember token');
+        $form->text('name', '用户名');
+        $form->email('email', '邮箱');
+        $form->password('password', '密码');
+        $form->mobile('phone_num', '电话号码');
+        $form->text('platform_wallet_address', '平台钱包地址');
+        $form->text('user_wallet_address', '提现钱包地址');
+        $form->text('withdraw_password', '提现密码');
+        $form->text('up_invite_code', '上级邀请码');
+        $form->text('invite_code', '邀请码');
+        $form->number('pid', '直接上级id');
+        $form->text('path', '用户层级路径');
+        $states = [
+            'on'  => ['value' => '1', 'text' => '已激活', 'color' => 'success'],
+            'off' => ['value' => '0', 'text' => '未激活', 'color' => 'danger'],
+        ];
+        $form->switch('activation_status','激活状态')->states($states);
+        $form->number('account_bonus', '账户余额');
+        $form->footer(function (Form\Footer $footer){
+            $footer->disableCreatingCheck();
+        });
         return $form;
     }
 

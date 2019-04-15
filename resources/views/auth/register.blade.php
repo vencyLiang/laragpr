@@ -5,17 +5,23 @@
     <script>
         //var jQuery = jQuery.noConflict();
         function ajax_check_invite(){
+            $.ajaxSetup({
+                headers: { 'X-CSRF-TOKEN' : '{{ csrf_token() }}' }
+            });
             $.ajax({
                 'url':"{{ route('checkinvite') }}",
-                'type':"get",
+                'type':"post",
                 'data': {'up_invite_code':$('#up_invite_code').val()},
                 'success':function (response) {
                     if (response === '0'){
                         $('#check_tip').html("<span style='color:red;'><b>邀请码无效</b></span>")
                         $("#submitBtn").attr('disabled','disabled');
-                    }else{
+                    }else if(response === '1'){
                         $('#check_tip').html("<span style='color:green;'><b>邀请码有效</b></span>")
                         $("#submitBtn").removeAttr('disabled');
+                    }else{
+                        $('#check_tip').html("<span style='color:orange;'><b>请填写邀请码</b></span>")
+                        $("#submitBtn").attr('disabled','disabled');
                     }
                 }
             })

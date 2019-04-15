@@ -13,6 +13,9 @@ class InviteCodesController extends Controller{
 
     protected function ajax_check_invite_code(Request $request){
         $upInviteCode = $request->up_invite_code;
+        if($upInviteCode == ""){
+            return 2;
+        }
         $res = User::Where('invite_code',$upInviteCode)->first();
         if($res || ($upInviteCode === PLATFORM_INVITE_CODE) ){
             return 1;
