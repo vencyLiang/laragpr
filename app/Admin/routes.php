@@ -14,6 +14,7 @@ Route::group([
 
     $router->get('/', 'HomeController@index');
     $router->resource('users', UsersController::class , ['except'=>['destroy']]);
+    $router->resource('groups','GroupsController',['only'=>['index']]);
     $router->resources([
         'system'=>SystemController::class ,
     ]);

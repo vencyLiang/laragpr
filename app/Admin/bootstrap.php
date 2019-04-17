@@ -23,3 +23,15 @@ Column::extend('check_activation', \App\Admin\Extensions\CheckActivation::class)
 Column::extend('color', function ($value, $color) {
     return "<span style='color: $color'>$value</span>";
 });
+Column::extend('status_color', function ($value) {
+    if($value){
+        return "<span style='color: green'>已激活</span>";
+    }else{
+        return "<span style='color: red'>未激活</span>";
+    }
+});
+Column::extend('prependIcon', function ($value, $icon) {
+
+    return "<span style='color: #999;'><i class='fa fa-$icon'></i>  $value</span>";
+
+});

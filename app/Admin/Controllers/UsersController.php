@@ -55,7 +55,7 @@ class UsersController extends Controller
         return $content
             ->header('会员编辑')
             ->description('修改用户资料')
-            ->body($this->updateForm()->edit($id));
+            ->body($this->updateForm($id)->edit($id));
     }
 
     /**
@@ -78,7 +78,7 @@ class UsersController extends Controller
 
     public function  update($id)
     {
-        $form = $this->updateForm()->edit($id);
+        $form = $this->updateForm($id)->edit($id);
         return $form->update($id);
     }
 
@@ -91,19 +91,15 @@ class UsersController extends Controller
     {
         $grid = new Grid(new User);
         $grid->id('Id');
-        $grid->name('用户名');
-        $grid->email('邮箱');
-        $grid->phone_num("手机号");
+        $grid->name('用户名')->editable();
+        $grid->email('邮箱')->editable()->prependIcon('envelope');
+        $grid->phone_num("手机号")->editable()->prependIcon('phone');
         $grid->platform_wallet_address('平台钱包地址');
-        $grid->user_wallet_address('提现地址');
-        $grid->up_invite_code('上级邀请码');
+        $grid->user_wallet_address('提现地址')->editable();
+        $grid->up_invite_code('上级邀请码')->sortable();
         $grid->invite_code('邀请码');
         $grid->pid('上级id')->sortable();
-        $states = [
-            'on'  => ['value' => '1', 'text' => '已激活', 'color' => 'success'],
-            'off' => ['value' => '0', 'text' => '未激活', 'color' => 'danger'],
-        ];
-        $grid->activation_status('激活状态')->switch($states)->sortable();
+        $grid->activation_status('激活状态')->status_color()->sortable();
         $grid->register_time('注册时间')->sortable();
         $grid->activate_time('激活时间')->sortable();
         $grid->account_bonus('余额')->color('red')->sortable();
@@ -161,27 +157,24 @@ class UsersController extends Controller
     protected function detail($id)
     {
         $show = new Show(User::findOrFail($id));
-
-        $show->id('Id');
-        $show->name('Name');
-        $show->email('Email');
-        $show->password('Password');
-        $show->phone_num('Phone num');
-        $show->platform_wallet_address('Platform wallet address');
-        $show->user_wallet_address('User wallet address');
-        $show->withdraw_password('Withdraw password');
-        $show->up_invite_code('Up invite code');
-        $show->invite_code('Invite code');
-        $show->pid('Pid');
-        $show->path('Path');
-        $show->activation_status('Activation status');
-        $show->register_time('Register time');
-        $show->activate_time('Activate time');
-        $show->account_bonus('Account bonus');
-        $show->remember_token('Remember token');
-        $show->created_at('Created at');
-        $show->updated_at('Updated at');
-
+        $show->panel()
+            ->tools(function ($tools) {
+                $tools->disableDelete();
+            });
+        $show->name('用户名');
+        $show->email('邮箱');
+        $show->phone_num('电话号码');
+        $show->platform_wallet_address('平台钱包地址');
+        $show->user_wallet_address('提现钱包地址');
+        $show->up_invite_code('获邀码');
+        $show->invite_code('推荐码');
+        $show->pid('直接上级id');
+        $show->path('层级路径');
+        $show->activation_status('激活状态')->using([0 => "未激活" , 1 => "已激活"]);
+        $show->register_time('注册时间');
+        $show->activate_time('激活时间');
+        $show->account_bonus('账户余额');
+        $show->status('用户状态')->using([0 => "已封禁" , 1 => "活动用户"]);
         return $show;
     }
 
@@ -193,6 +186,9 @@ class UsersController extends Controller
     protected function createForm()
     {
         $form = new Form(new User);
+        $form->tools(function (Form\Tools $tools) {
+            $tools->disableDelete();
+        });
         $form->text('name', '用户名')->rules('required');
         $form->email('email', '邮箱')->rules('required');
         $form->password('password', '密码');
@@ -204,9 +200,12 @@ class UsersController extends Controller
         return $form;
     }
 
-    protected function updateForm()
+    protected function updateForm($id)
     {
-        $form = new Form(new User);
+        $form = new Form(User::findOrFail($id));
+        $form->tools(function (Form\Tools $tools) {
+            $tools->disableDelete();
+        });
         $form->text('name', '用户名')->rules('required');
         $form->email('email', '邮箱')->rules('required');
         $form->password('password', '密码')->rules('required');
@@ -216,8 +215,18 @@ class UsersController extends Controller
         $form->text('withdraw_password', '提现密码');
         $form->text('up_invite_code', '上级邀请码')->rules('required');
         $form->text('invite_code', '邀请码');
-        $form->number('pid', '直接上级id')->help('人为控制可能会打乱层级关系而产生不可预知的后果，请确认无误后谨慎操作！');
-        $form->text('path', '用户层级路径');
+        if($form->model()->pid !== NULL){
+            $form->display('pid', '上级id')->help('激活状态下不可更改！')->with(function ($value) {
+                return "<span style= 'color:red'>$value</span>";
+            });
+        }else{
+            $form->number('pid', '直接上级id')->help('人为控制可能会打乱层级关系而产生不可预知的后果，请确认无误后谨慎操作！');
+        }
+        if($form->model()->pid !== NULL){
+            $form->display('pid', '上级id')->help('激活状态下不可更改！');
+        }else{
+            $form->text('path', '用户层级路径')->help('配合pid的path值填写，请谨慎操作！');
+        }
         $states = [
             'on'  => ['value' => '1', 'text' => '已激活', 'color' => 'success'],
             'off' => ['value' => '0', 'text' => '未激活', 'color' => 'danger'],

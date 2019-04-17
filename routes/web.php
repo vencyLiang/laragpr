@@ -15,3 +15,4 @@ Route::get('/', 'PagesController@root')->name('root');
 Auth::routes();
 Route::post('/checkinvite','InviteCodesController@ajax_check_invite_code')->name('checkinvite');
 Route::resource('users', 'UserController', ['only' => ['show', 'update', 'edit']]);
+Route::get('/test','TestController@test');

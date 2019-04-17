@@ -48,8 +48,9 @@ class ActivateController extends Controller{
               if($res) {
                   $upUids = $user->get_all_parentsIdArr();
                   $relationArr = [];
+                  $totalLevel = count($upUids);
                   foreach ($upUids as $k => $uid) {
-                      $relationArr[] = ['uid' => $user->id, 'up_uid' => $uid, 'level' => $k + 1];
+                      $relationArr[] = ['uid' => $user->id, 'up_uid' => $uid, 'level' => $totalLevel - $k ];
                   }
                   DB::table("user_relation")->insert($relationArr);
                   Log::create([
