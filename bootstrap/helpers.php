@@ -8,6 +8,6 @@ function route_class()
 /**
  * @return \Illuminate\Database\Eloquent\Model|\Illuminate\Database\Query\Builder|null|object
  */
-function system_config(){
-    return DB::table('system_config')->where('id',1)->first();
+function play_config(){
+    return DB::find(1);
 }

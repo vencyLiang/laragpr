@@ -19,19 +19,25 @@
  */
 use Encore\Admin\Grid\Column;
 Encore\Admin\Form::forget(['map', 'editor']);
-Column::extend('check_activation', \App\Admin\Extensions\CheckActivation::class);
 Column::extend('color', function ($value, $color) {
     return "<span style='color: $color'>$value</span>";
 });
-Column::extend('status_color', function ($value) {
+Column::extend('status_color', function ($value,$message) {
     if($value){
-        return "<span style='color: green'>已激活</span>";
+        return "<span style='color: green'>已{$message}</span>";
     }else{
-        return "<span style='color: red'>未激活</span>";
+        return "<span style='color: red'>未{$message}</span>";
+    }
+});
+Column::extend('error', function ($value) {
+    if($value === NULL){
+        return "<span style='color: green'>成功</span>";
+    }else{
+        return "<span style='color: red'>失败</span>";
     }
 });
 Column::extend('prependIcon', function ($value, $icon) {
 
-    return "<span style='color: #999;'><i class='fa fa-$icon'></i>  $value</span>";
+    return "<span style='color: #999;'><i class='fa fa-$icon'></i>$value</span>";
 
 });

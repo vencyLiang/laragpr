@@ -23,6 +23,15 @@ class User extends Authenticatable
     public function account(){
         return $this->hasOne(UserWalletAccount::class,'uid');
     }
+
+    public function accountFormRec(){
+        return $this->hasMany(AccountRec::class,'user_id');
+    }
+
+    public function accountToRec(){
+        return $this->hasMany(AccountRec::class,'to_uid');
+    }
+
     /**获得所有的线内后代；
      * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany
      */
@@ -49,9 +58,10 @@ class User extends Authenticatable
     }
 
     /**功能：获取当前用户所有上级用户的id数组；
+     * @param  $level: 从父代开始取$level代；
      * @return array
      */
-    public function  get_all_parentsIdArr(){
+    public function  get_all_parentsIdArr($level = NULL){
         //获取层级路径字符串
         $userPath = $this->attributes['path'];
         //将层级关系转化为数组；
@@ -63,15 +73,19 @@ class User extends Authenticatable
         foreach ($parentArr as $k=>$v){
             $parentArr[$k] = (int) $v;
         }
+        if(!empty($level)){
+            $parentArr = array_slice($parentArr,-1,$level,true);
+        }
         return $parentArr;
     }
 
 
     /**功能：获取当前用户所有上级用户collection集合；
+     * @param  $level: 从父代开始取$level代；
      * @return mixed
      */
-    public function get_all_parentsModel(){
-        $parentArr = $this->get_all_parentsIdArr();
+    public function get_all_parentsModel($level = NULL){
+        $parentArr = $this->get_all_parentsIdArr($level);
         $allParentsModel =  self::find($parentArr);
         return $allParentsModel;
     }

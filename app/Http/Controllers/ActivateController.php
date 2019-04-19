@@ -3,7 +3,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection as Collection;
 use Illuminate\Support\Facades\DB;
-use App\Models\Log;
+use App\Models\ActivationRec;
 use Exception;
 class ActivateController extends Controller{
 
@@ -21,10 +21,9 @@ class ActivateController extends Controller{
           $activationInfo['activate_time']  = time();
           //如果上级邀请码为平台邀请码，则新开分区
           $up_invite_code = $user->up_invite_code;
-          if($up_invite_code === PLATFORM_INVITE_CODE){
+          if($up_invite_code === play_config()->platform_wallet_address){
               $activationInfo['pid'] = 0;
               $activationInfo['path'] = '0-'.$user->id;
-              $activationInfo['root_id'] = $user->id;
           }else{
               //获取有相同上级激活码的用户
               $siblingsCollection = User::Where('up_invite_code',$up_invite_code)->where('activation_status','1')->get();
@@ -34,8 +33,6 @@ class ActivateController extends Controller{
                   $parentInfo = User::where('invite_code',$up_invite_code)->first();
                   $activationInfo['pid'] = $parentInfo->id;
                   $activationInfo['path'] = "$parentInfo->path-$user->id";
-                  $activationInfo['root_id'] = $parentInfo->root_id;
-
               }else{
                   $parentUser = $this->down_position($siblingsCollection);
                   $activationInfo['pid'] = $parentUser->id;
@@ -44,35 +41,27 @@ class ActivateController extends Controller{
           }
           DB::beginTransaction();
           try{
-              $res = $user->update($activationInfo);
-              if($res) {
-                  $upUids = $user->get_all_parentsIdArr();
-                  $relationArr = [];
-                  $totalLevel = count($upUids);
-                  foreach ($upUids as $k => $uid) {
-                      $relationArr[] = ['uid' => $user->id, 'up_uid' => $uid, 'level' => $totalLevel - $k ];
-                  }
-                  DB::table("user_relation")->insert($relationArr);
-                  Log::create([
-                      //类型：激活；
-                      'type' => 0,
+              $user->update($activationInfo);
+              $upUids = $user->get_all_parentsIdArr();
+              $relationArr = [];
+              $totalLevel = count($upUids);
+              foreach ($upUids as $k => $uid) {
+                    $relationArr[] = ['uid' => $user->id, 'up_uid' => $uid, 'level' => $totalLevel - $k ];
+              }
+              DB::table("user_relation")->insert($relationArr);
+              ActivationRec::create([
                       //触发的用户；
-                      'trigger_user_id' => $user->id,
+                      'user_id' => $user->id,
                       //状态：成功；
                       'status' => 1,
-                  ]);
-                  DB::commit();
-              }else{
-                  throw new Exception("激活失败！");
-              }
+              ]);
+              DB::commit();
           }catch (Exception $exception){
               DB::rollBack();
-              Log::create([
-                  //类型：激活；
-                  'type'=> 0,
-                  //触发的用户；
-                  'trigger_user_id' => $user->id,
-                  //状态：异常；
+              ActivationRec::create([
+                  'user_id' => $user->id,
+                  //激活
+                  'type' => 1 ,
                   'status' => 0,
                   'message'=> $exception->getMessage()
               ]);

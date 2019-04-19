@@ -99,7 +99,7 @@ class UsersController extends Controller
         $grid->up_invite_code('上级邀请码')->sortable();
         $grid->invite_code('邀请码');
         $grid->pid('上级id')->sortable();
-        $grid->activation_status('激活状态')->status_color()->sortable();
+        $grid->activation_status('激活状态')->status_color('激活')->sortable();
         $grid->register_time('注册时间')->sortable();
         $grid->activate_time('激活时间')->sortable();
         $grid->account_bonus('余额')->color('red')->sortable();
@@ -223,7 +223,7 @@ class UsersController extends Controller
             $form->number('pid', '直接上级id')->help('人为控制可能会打乱层级关系而产生不可预知的后果，请确认无误后谨慎操作！');
         }
         if($form->model()->pid !== NULL){
-            $form->display('pid', '上级id')->help('激活状态下不可更改！');
+            $form->display('path', '用户层级路径')->help('激活状态下不可更改！');
         }else{
             $form->text('path', '用户层级路径')->help('配合pid的path值填写，请谨慎操作！');
         }

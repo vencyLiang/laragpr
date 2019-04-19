@@ -7,21 +7,30 @@
 
 namespace App\Http\Controllers;
 use App\Models\User;
-use App\Models\Log;
-use App\Http\Requests\UserRequest;
-use App\Ethwallet\EthRpcMethod;
+use App\Models\ActivationRec;
 use Illuminate\Support\Facades\DB;
 use \Exception;
 
 class BonusController extends Controller
 {
+    protected static function  getConfig(){
+        $config = play_config();
+        define("DIRECT_BONUS_RATIO",$config->direct_bonus_ratio);
+        define("LEVEL_BONUS_RATIO" ,$config->level_bonus_ratio);
+        define("ACTIVATE_COST",$config->activate_cost);
+        define("GENERATIONS",$config->generations);
+        define("COIN_TYPE",$config->coin_type);
+    }
+
+
     /**功能：用户激活时，各层级的奖金分配；
      * @param User $user
      * @return bool | null
      */
     public function generate_bonus(User $user){
+        self::getConfig();
         //获取该用户在其路径上的全部上级用户集合
-        $parentsModel = $user->get_all_parentsModel();
+        $parentsModel = $user->get_all_parentsModel(GENERATIONS);
         DB::beginTransaction();
         try {
             //初始化总流动金额；
@@ -32,58 +41,71 @@ class BonusController extends Controller
             $levelBonus = LEVEL_BONUS_RATIO * ACTIVATE_COST;
             //如果是滑落用户
             if ($user->is_down()) {
+                $coinType = play_config()->currency;
                 foreach ($parentsModel as $parentItem) {
                     if ($parentItem->invite_code == $user->up_invite_code) {
                         $totalBonus += $directBonus;
                         $parentItem->account_bonus += $directBonus;
+                        $num = $directBonus;
                     } else {
                         $totalBonus += $levelBonus;
                         $parentItem->account_bonus += $levelBonus;
+                        $num = $levelBonus;
                     }
                     $parentItem->save();
+                    $parentItem->accountToRec()->save([
+                        'user_id' => $user->id ,
+                        'from_address' => $user->platform_wallet_address ,
+                        'to_address' => $parentItem->platform_wallet_address ,
+                        'num' => $num ,
+                        'is_confirmed' => 1,
+                        'coin_type' => $coinType ,
+                        'transfer_type' => 5,
+                        'is_self' => 1
+                    ]);
                 }
                 //如果是直推用户；
             } else {
+                $coinType = play_config()->currency;
                 foreach ($parentsModel as $parentItem) {
                     if ($parentItem->id == $user->pid) {
                         $totalBonus += $directBonus;
                         $parentItem->account_bonus += DIRECT_BONUS_RATIO * ACTIVATE_COST;
+                        $num = $directBonus;
                     } else {
                         $totalBonus += $levelBonus;
                         $parentItem->account_bonus += LEVEL_BONUS_RATIO * ACTIVATE_COST;
+                        $num = $directBonus;
                     }
                     $parentItem->save();
+                    $parentItem->accountToRec()->save([
+                        'user_id' => $user->id ,
+                        'from_address' => $user->platform_wallet_address ,
+                        'to_address' => $parentItem->platform_wallet_address ,
+                        'num' => $num ,
+                        'is_confirmed' => 1,
+                        'coin_type' => $coinType ,
+                        'transfer_type' => 5,
+                        'is_self' => 1
+                    ]);
                 }
             }
-            Log::create([
-                //类型：返利；
-                'type' => 1,
-                //触发的用户；
-                'trigger_user_id' => $user->id,
-                //状态：成功；
-                'status' => 1,
-                'running_account' => $totalBonus,
-                'message' => '返利至用户(' . implode(',',$user->get_all_parentsIdArr()) .')'
-            ]);
             DB::commit();
             return NULL;
         }catch (Exception $e){
             DB::rollBack();
-            Log::create([
-                //类型：返利；
-                'type'=>1,
-                //触发的用户；
-                'trigger_user_id' => $user->id,
-                //状态：异常；
-                'status'=>0,
-                //涉及的流水金额；
-                'running_account' => $totalBonus,
+            ActivationRec::create([
+                'user_id' => $user->id,
+                //返佣
+                'type' => 2 ,
+                'status' => 0,
                 'message'=> $e->getMessage()
             ]);
             return false;
         }
     }
 
+    /*
     public function  withdraw(UserRequest $request,User $user){
         $validatedData = $request->validated();
         $userWalletAddress = $validatedData['user_wallet_address'];
@@ -136,5 +158,5 @@ class BonusController extends Controller
             return json_encode(['status'=>302,'message'=>$transferHash]);
         }
     }
-
+*/
 }
