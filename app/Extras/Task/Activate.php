@@ -1,11 +1,11 @@
 <?php
-namespace App\Http\Controllers;
+namespace App\Extras\Task;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection as Collection;
 use Illuminate\Support\Facades\DB;
 use App\Models\ActivationRec;
 use Exception;
-class ActivateController extends Controller{
+class Activate{
 
     /**功能：对满足条件的注册用户进行激活，生成邀请码，更新上下级对应关系，并生成层级路径。
      * @param User $user
@@ -13,8 +13,7 @@ class ActivateController extends Controller{
      */
     public function activate(User $user){
           //设定邀请码；
-          $invite_code = new InviteCodesController();
-          $activationInfo['invite_code'] = $invite_code->generate_invite_code($user->id) ;
+          $activationInfo['invite_code'] = generate_invite_code($user->id) ;
           //设定激活状态；
           $activationInfo['activation_status'] = '1';
           //获取激活时间；
@@ -52,6 +51,7 @@ class ActivateController extends Controller{
               ActivationRec::create([
                       //触发的用户；
                       'user_id' => $user->id,
+                      'type' => 1 ,
                       //状态：成功；
                       'status' => 1,
               ]);

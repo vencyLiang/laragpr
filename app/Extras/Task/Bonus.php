@@ -5,23 +5,15 @@
  * authoredBy: vency
  */
 
-namespace App\Http\Controllers;
+namespace App\Extras\Task;
 use App\Models\User;
 use App\Models\ActivationRec;
 use Illuminate\Support\Facades\DB;
 use \Exception;
 
-class BonusController extends Controller
+class Bonus
 {
-    protected static function  getConfig(){
-        $config = play_config();
-        define("DIRECT_BONUS_RATIO",$config->direct_bonus_ratio);
-        define("LEVEL_BONUS_RATIO" ,$config->level_bonus_ratio);
-        define("ACTIVATE_COST",$config->activate_cost);
-        define("GENERATIONS",$config->generations);
-        define("COIN_TYPE",$config->coin_type);
-    }
-
+    use SystemConfig;
 
     /**功能：用户激活时，各层级的奖金分配；
      * @param User $user
@@ -105,58 +97,4 @@ class BonusController extends Controller
         }
     }
 
-    /*
-    public function  withdraw(UserRequest $request,User $user){
-        $validatedData = $request->validated();
-        $userWalletAddress = $validatedData['user_wallet_address'];
-        $withdrawBonus = (float)$validatedData['withdraw_bonus'];
-        $eth = new EthRpcMethod();
-        $transferHash = $eth->eth_sendTransaction(PUBLIC_WALLET_ADDRESS, $userWalletAddress, $withdrawBonus, PUBLIC_WALLET_PWD);
-        if (strlen($transferHash) == 64 && substr($transferHash, 0, 2) === '0x'){
-                try {
-                    DB::beginTransaction();
-                    $user->bonus -= $withdrawBonus;
-                    $user->save();
-                    Log::create([
-                        //类型：提现；
-                        'type' => 2,
-                        //触发的用户；
-                        'trigger_user_id' => $user->id,
-                        //状态：待确认；
-                        'status'=> 2,
-                        'running_account' => $withdrawBonus,
-                        'message'=> '转账Hash值:'. $transferHash
-                    ]);
-                    DB::commit();
-                    return json_encode(['status'=>200,'message'=>"提现成功，HASH值为:" .$transferHash ."请耐心等待，若长时间未到账，请联系客服！"]);;
-                } catch (Exception $e){
-                    $message = $e->getMessage();
-                    DB::rollBack();
-                    Log::create([
-                    //类型：提现；
-                    'type'=>2,
-                    //触发的用户；
-                    'trigger_user_id' => $user->id,
-                    //状态：失败；
-                    'status'=>0,
-                    'running_account' => $withdrawBonus,
-                    'message'=> $message
-                    ]);
-                    return json_encode(['status'=>302,'message'=>$message]);
-                }
-        }else {
-                Log::create([
-                //类型：提现；
-                'type' => 2,
-                //触发的用户；
-                'trigger_user_id' => $user->id,
-                //状态：失败；
-                'status'=> 0,
-                'running_account' => $withdrawBonus,
-                'message'=> $transferHash
-                ]);
-            return json_encode(['status'=>302,'message'=>$transferHash]);
-        }
-    }
-*/
 }

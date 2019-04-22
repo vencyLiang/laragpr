@@ -50,8 +50,9 @@ class RegisterController extends Controller
     protected function validator(array $data)
     {
         return Validator::make($data, [
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
+            'name' => 'required_without_all:email,phone_num|max:255|unique:users',
+            'email' => 'required_without_all:name,phone_num|email|max:255|unique:users',
+            'phone_num'=>['required_without_all:name,email','regex:/^((13[0-9])|(14[5,7])|(15[0-3,5-9])|(17[0,3,5-8])|(18[0-9])|166|198|199)\d{8}$/','unique:users'] ,
             'password' => 'required|string|min:6|confirmed',
             'up_invite_code' =>  'required|string'
         ]);
@@ -63,19 +64,13 @@ class RegisterController extends Controller
      * @param  array  $data
      * @return \App\Models\User
      */
-    protected function create(array $data)
-    {
-        $user = User::create([
-            'name' => $data['name'],
-            'email' => $data['email'],
-            'password' => Hash::make($data['password']),
-            'up_invite_code' => $data['up_invite_code'],
-        ]);
-        return $user;
+    protected function create(array $data){
+        $data['password'] = bcrypt($data['password']);
+        return User::create($data);
     }
 
     protected function showRegistrationForm(){
-            $up_invite_code = NULL;
+        $up_invite_code = NULL;
         if (isset($_GET['up_invite_code'])){
             $up_invite_code = $_GET['up_invite_code'];
         }

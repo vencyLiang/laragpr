@@ -1,5 +1,5 @@
 <?php
-namespace api\coins\btc;
+namespace App\Extras\Coins\Btc;
 class Bitcoin
 {
     // Configuration options

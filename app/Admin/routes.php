@@ -16,6 +16,7 @@ Route::group([
     $router->resource('users', UsersController::class , ['except'=>['destroy']]);
     $router->resource('groups','GroupsController',['only'=>['index']]);
     $router->resource('trades','AccountController',['only'=>['index']]);
+    $router->resource('errors','ActivationRecController',['only'=>['index']]);
     $router->resources([
         'system'=>SystemController::class ,
     ]);

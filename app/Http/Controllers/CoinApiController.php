@@ -7,9 +7,15 @@
  */
 
 namespace App\Http\Controllers;
-use Api\Common\Coins;
+use App\Extras\Common\Coins;
+use App\Extras\Task\SystemConfig;
 use Illuminate\Support\Facades\DB;
 class CoinApiController extends Controller{
+    use SystemConfig;
+    public function __construct()
+    {
+        self::getConfig();
+    }
 
     /**生成地址；
      * @param null $unique
@@ -69,7 +75,7 @@ class CoinApiController extends Controller{
         if($status){
             DB::table('running_account')->insert($center);
             DB::table('user_wallet_account')->where('user_id',$data['user_id'])->update([
-                "{$coinArr[$data['coin_type']]}_balance" => DB::raw("{$coinArr[$data['coin_type']]}_balance-{$data['num']}-".getTransFee()),
+                "{$coinArr[$data['coin_type']]}_balance" => DB::raw("{$coinArr[$data['coin_type']]}_balance-{$data['num']}-".ACTIVATE_COST),
                 "{$coinArr[$data['coin_type']]}_frozen" => DB::raw("{$coinArr[$data['coin_type']]}_frozen+{$data['num']}")
             ]);
             return ['status' => 200, 'message' => '操作成功！请等待区块确认！'];
@@ -91,7 +97,7 @@ class CoinApiController extends Controller{
             3 => ['coin'=>'btc','method'=>''],
         ];
         $coin = $configArr[$data['coin_type']];
-        $coinCenterAddress = config("coins.{$coin['coin']}_center_address");
+        $coinCenterAddress = constant(strtoupper("center_{$coin['coin']}_address"));
         $transferData = [ ];
         if($direction) {
             if ($coin['coin'] === 'usdt') {
@@ -124,7 +130,7 @@ class CoinApiController extends Controller{
                     'from' => $coinCenterAddress,
                     'to' => $data['to_address'],
                     'value' => $data['num'],
-                    'password' => config('coins.eth_center_password'),
+                    'password' => CENTER_ETH_PASSWORD,
                 ];
             }
         }

@@ -1,5 +1,5 @@
 <?php
-namespace api\coins\eth;
+namespace App\Extras\Coins\Eth;
 class RPCException extends \Exception
 {
     public function __construct($message, $code = 0, \Exception $previous = null)

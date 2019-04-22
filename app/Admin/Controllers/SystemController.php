@@ -31,6 +31,7 @@ class SystemController extends Controller
                 $show->activate_cost('权益资格激活费用');
                 $show->generations('可返奖的代数');
                 $show->currency('平台流通与结算币种');
+                $show->transfer_fee('转账手续费(平台内至平台外)');
                 $show->center_usdt_address('中心钱包地址(usdt)');
                 $show->center_eth_address('中心钱包地址(eth)');
                 $show->center_eth_passowrd('中心钱包地址对应的密码(eth)');
@@ -65,6 +66,7 @@ class SystemController extends Controller
             'off' => ['value' => 'btc', 'text' => 'USDT', 'color' => 'danger'],
         ];
         $form->switch('currency','平台流通与结算币种')->states($states);
+        $form->number('transfer_fee','转账手续费(平台内至平台外)');
         $form->text('center_usdt_address','中心钱包地址(usdt)');
         $form->text('center_eth_address','中心钱包地址(eth)');
         $form->text('center_eth_passowrd','中心钱包地址对应的密码(eth)');

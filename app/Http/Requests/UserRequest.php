@@ -27,7 +27,7 @@ class UserRequest extends FormRequest
     {   //sometimes，表示存在才验证
         return [
             'name' => ['sometimes','required','between:3,25','regex:/^[A-Za-z0-9\-\_]+$/','unique:users,name,' . Auth::id()],
-            'email' => ['sometimes','required','email'],
+            'email' => ['sometimes','required','email','unique:users,email,' . Auth::id()],
             'user_wallet_address' =>['sometimes','required'],
             'withdraw_bonus' => ['sometimes',new BonusValidationRule],
             //以下字段是设置提现密码的表单name属性值；

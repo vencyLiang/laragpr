@@ -5,7 +5,7 @@
  * Date: 2019/3/15
  * Time: 12:14
  */
-namespace api\coins\eth;
+namespace App\Extras\Coins\Eth;
 class JSON_RPC
 {
     protected $host, $port, $version;

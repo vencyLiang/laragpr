@@ -48,7 +48,7 @@ class AccountController extends Controller
         $grid->num('数量');
         $grid->transfer_type('资金流动类型')->using([1 => '用户提现',2 => 'C2C转出',3 => '用户充值', 4 => '站内交易',5 =>'激活分红'])->sortable();
         $grid->fail_type('交易状态')->error()->sortable();
-        $grid->is_confirmed('交易是否确认')->status_color('确认')->sortable();
+        $grid->is_confirmed('交易是否确认')->status_color([0 =>'未确认',1 => '已确认'])->sortable();
         $grid->disableActions();
         $grid->disableCreation();
         $grid->tools(function ($tools) {

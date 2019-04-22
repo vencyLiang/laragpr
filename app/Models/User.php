@@ -32,6 +32,9 @@ class User extends Authenticatable
         return $this->hasMany(AccountRec::class,'to_uid');
     }
 
+    public function activationRec(){
+        return $this->hasOne(ActivationRec::class);
+    }
     /**获得所有的线内后代；
      * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany
      */

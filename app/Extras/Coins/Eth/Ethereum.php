@@ -6,38 +6,36 @@
  * Time: 15:30
  */
 
-namespace App\Ethwallet;
+namespace App\Extras\Coins\Eth;
 
 
-class EthRpcMethod extends EthCommon
-{
+class Ethereum extends EthereumBaseMethod{
+    public $base = "1000000000000000000";
 
-    public $host = "127.0.0.1";//geth地址
-    public $port = "8545";//端口
-
-    public function __construct()
+    function toWei($ethNumber)
     {
-        parent::__construct($this->host, $this->port);
-
+        $tenNumber=bcmul($ethNumber,$this->base);//高精度浮点数相乘
+        $weiNumber = base_convert($tenNumber, 10, 16);
+        return  '0x'.$weiNumber;
     }
 
-    /**获取用户账号余额；
-     * @param $account
-     * @return float|int
+    /**
+     * @param $weiNumber 16进制wei单位
+     * @return float|int 10进制eth单位【正常单位】
      */
-    function eth_getBalance($account)
-    {
-        $params = [
-            $account,
-            "latest"
-        ];
-        $data = $this->request(__FUNCTION__, $params);
-        if (empty($data['error']) && !empty($data['result'])) {
-            return $this->fromWei($data['result']);//返回eth数量，自己做四舍五入处理
-        } else {
-            return $data['error']['message'];
-        }
+    function fromWei($weiNumber){
+        $tenNumber = base_convert($weiNumber, 16, 10);
+        $ethNumber = bcdiv($tenNumber,$this->base);
+        return $ethNumber;
     }
+
+    function eth_getBlockByNumber($block='latest', $full_tx=TRUE){
+        if(is_numeric($block)){
+            $block = encodeToHexString($block);
+        }
+        return $this->ether_request(__FUNCTION__, array($block, $full_tx));
+    }
+
 
     /**转账
      * @param $from
@@ -45,6 +43,7 @@ class EthRpcMethod extends EthCommon
      * @param $value
      * @param $password
      * @return string
+     * @throws RPCException
      */
     function eth_sendTransaction($from,$to,$value,$password)
     {
@@ -119,7 +118,12 @@ class EthRpcMethod extends EthCommon
         }
     }
 
-
+    /**
+     * @param $from
+     * @param $to
+     * @param $value
+     * @return mixed
+     */
     function eth_estimateGas($from, $to, $value)
     {
         $params = array(
@@ -131,8 +135,9 @@ class EthRpcMethod extends EthCommon
         return $data['result'];
     }
 
-    /*** 获得当前GAS价格
+    /**获得当前gas price
      * @return mixed
+     * @throws RPCException
      */
     function eth_gasPrice()
     {
@@ -146,6 +151,7 @@ class EthRpcMethod extends EthCommon
      * @param $account
      * @param $password
      * @return mixed
+     * @throws RPCException
      */
 
     function personal_unlockAccount($account, $password)

@@ -6,7 +6,7 @@
  * 多币种节点RPC配置与RPC方法集合类；
  */
 
-namespace api\common;
+namespace App\Extras\Common;
 
 class Coins
 {
@@ -34,7 +34,7 @@ class Coins
         if (empty($coinConfigArr)) {
             return self::NOT_EXIST;
         } else {
-            $coinClass = "Api\Coins"."\\".$coinConfigArr['namespace']."\\".$coinConfigArr['class'];
+            $coinClass = "App\Extras\Coins"."\\".$coinConfigArr['namespace']."\\".$coinConfigArr['class'];
             //$coin = new Bitcoin($coinConfigArr['host'],$coinConfigArr['port']);
             $coin = new $coinClass($coinConfigArr['host'], $coinConfigArr['port']);
             return $coin->$coinMethod(...$params);

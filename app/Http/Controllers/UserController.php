@@ -5,45 +5,30 @@ use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Requests\UserRequest;
 use Illuminate\Support\Facades\Hash;
-use App\Ethwallet\EthRpcMethod;
+use Illuminate\Http\Request;
+use App\Extras\Task\SystemConfig;
 
 class UserController extends Controller{
+    use SystemConfig;
     private $user;
     public function __construct()
     {
-        $this->middleware('auth',['except'=> ['show']]);
+        $this->middleware('auth',['except'=>'ajax_check_invite_code']);
         //获取当前登录用户
         $this->user = User::find(Auth::id());
+        self::getConfig();
     }
 
-    /**功能：实现购买激活码后的逻辑。
-     * @return string
-     */
-    public function buy_invite_code()
-    {
-        $activeStatus = session('activation_status');
-        if(!$activeStatus){
-            $eth = new EthRpcMethod();
-            $userBalance =$eth->eth_getBalance($this->user->platform_wallet_address);
-            if($userBalance >= ACTIVATE_COST){
-                $this->user->activation_status = '1';
-                $this->user->save();
-                $activeStatus = '1';
-                session(['activation_status',$activeStatus]);
-                $activation = new ActivateController();
-                $activateRes = $activation->activate($this->user);
-                $bonus = new BonusController();
-                $bonus->generate_bonus($this->user);
-                if($activateRes){
-                    return json_encode(['status'=>200, 'message'=>"已经成功购买，无需再次购买"]);
-                }else{
-                    return json_encode(['status'=>302, 'message'=>"已满足购买条件，但由于系统故障，未能购买成功，请及时联系客服！"]);
-                }
-            }else{
-                return json_encode(['status'=>302, 'message'=>"请转入足够的以太坊！"]);
-            }
+    protected function ajax_check_invite_code(Request $request){
+        $upInviteCode = $request->input('up_invite_code');
+        if($upInviteCode == ""){
+            return 2;
+        }
+        $res = User::Where('invite_code',$upInviteCode)->first();
+        if($res || ($upInviteCode === PLATFORM_WALLET_ADDRESS) ){
+            return 1;
         }else{
-            return json_encode(['status'=>200, 'message'=>"已经成功购买，无需再次购买"]);
+            return 0;
         }
     }
 
@@ -82,7 +67,7 @@ class UserController extends Controller{
 
 
     public function show(User $user){
-
+            return 1;
 
     }
 

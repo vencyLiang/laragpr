@@ -24,9 +24,9 @@ Column::extend('color', function ($value, $color) {
 });
 Column::extend('status_color', function ($value,$message) {
     if($value){
-        return "<span style='color: green'>已{$message}</span>";
+        return "<span style='color: green'>{$message[$value]}</span>";
     }else{
-        return "<span style='color: red'>未{$message}</span>";
+        return "<span style='color: red'>{$message[$value]}</span>";
     }
 });
 Column::extend('error', function ($value) {

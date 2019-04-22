@@ -99,7 +99,7 @@ class UsersController extends Controller
         $grid->up_invite_code('上级邀请码')->sortable();
         $grid->invite_code('邀请码');
         $grid->pid('上级id')->sortable();
-        $grid->activation_status('激活状态')->status_color('激活')->sortable();
+        $grid->activation_status('激活状态')->status_color([0 =>'未激活',1 => '已激活'])->sortable();
         $grid->register_time('注册时间')->sortable();
         $grid->activate_time('激活时间')->sortable();
         $grid->account_bonus('余额')->color('red')->sortable();
@@ -191,7 +191,7 @@ class UsersController extends Controller
         });
         $form->text('name', '用户名')->rules('required');
         $form->email('email', '邮箱')->rules('required');
-        $form->password('password', '密码');
+        $form->password('password', '密码')->rules('required');
         $form->text('phone_num', '电话号码');
         $form->text('up_invite_code', '上级邀请码');
         $form->footer(function (Form\Footer $footer){
