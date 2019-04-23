@@ -87,11 +87,12 @@ class User extends Authenticatable
 
 
     /**功能：获取当前用户所有上级用户collection集合；
+     * @param $userPath
      * @param  $level: 从父代开始取$level代；
      * @return mixed
      */
-    public function get_all_parentsModel($level = NULL){
-        $parentArr = $this->get_all_parentsIdArr("",$level);
+    public function get_all_parentsModel($userPath ="",$level = NULL){
+        $parentArr = $this->get_all_parentsIdArr($userPath,$level);
         $allParentsModel =  self::find($parentArr);
         return $allParentsModel;
     }

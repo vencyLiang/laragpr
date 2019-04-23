@@ -17,12 +17,13 @@ class Bonus
 
     /**功能：用户激活时，各层级的奖金分配；
      * @param User $user
+     * @param $userPath
      * @return bool | null
      */
-    public function generate_bonus(User $user){
+    public static function generate_bonus(User $user,$userPath  = ""){
         self::getConfig();
         //获取该用户在其路径上的全部上级用户集合
-        $parentsModel = $user->get_all_parentsModel(GENERATIONS);
+        $parentsModel = $user->get_all_parentsModel($userPath,GENERATIONS);
         DB::beginTransaction();
         try {
             //初始化总流动金额；

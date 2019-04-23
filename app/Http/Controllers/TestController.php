@@ -11,7 +11,9 @@ use App\Extras\Task\Activate;
 
 class TestController extends Controller
 {
-    function  testActivate(User $user){
-       Activate::activate($user);
+    function test()
+    {
+      //dd( User::where('id',1)->first()->toArray());
+        dd(get_object_vars(0));
     }
 }

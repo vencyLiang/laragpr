@@ -69,7 +69,7 @@ class Activate{
               ]);
               return false;
           }
-          return true;
+          return $activationInfo['path'];
     }
 
     /**功能：实现用户以某邀请码激活后的滑落动作；

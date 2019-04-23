@@ -5,6 +5,7 @@
  * Time: 16:40
  */
 namespace App\Http\Controllers;
+use App\Extras\Task\Bonus;
 use App\Models\UserWalletAccount;
 use App\Models\User;
 use App\Extras\Task\Activate;
@@ -99,6 +100,7 @@ class EthController
     {
         $check = DB::table('user_wallet_account')->where('eth_address',$scanResult['to'])->first();
         if ($check) {
+            $check = get_object_vars($check);
             $exist = DB::table('running_account')->where(['txid_hash'=> $scanResult['hash'],'coin_type'=> 2])->first();
             $data['user_id'] = $check['user_id'];
             $data['to_address'] = $check['eth_address'];
@@ -109,6 +111,7 @@ class EthController
             $data['coin_type'] = 2;
             $data['transfer_type'] = 3;
             if($exist){
+                $exist = get_object_vars($exist);
                 if(!$exist['is_confirmed'] && isset($scanResult['blockNumber']) && self::ethConfirmations($scanResult['blockNumber']) >= 16){
                     self::confirmRecharge($check['user_id'],$scanResult['hash'],$check['eth_balance'] + $data['num']);
                     CoinController::synCenter($data);
@@ -141,7 +144,10 @@ class EthController
             $userAccountInfo->eth_balance += $amount;
             $userModel = User::find($userId);
             if($userAccountInfo->eth_balance >= ($cost = play_config()->activate_cost) && !$userModel->activation_status){
-                Activate::activate($userModel);
+               $userPath = Activate::activate($userModel);
+               if(!$userPath){
+                    Bonus::generate_bonus($userModel,$userPath);
+               }
                 $userAccountInfo->eth_balance -= $cost;
             }
             $userAccountInfo->save();
