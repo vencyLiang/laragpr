@@ -44,6 +44,7 @@ class ActivationRecController extends Controller
         $grid->type('事件类型')->using([1 => '激活',2 => '分红'])->sortable();
         $grid->status('状态')->status_color([1 =>'成功',0 => '失败'])->sortable();
         $grid->message('相关信息');
+        $grid->created_at('发生时间');
         $grid->disableActions();
         $grid->disableCreation();
         $grid->tools(function ($tools) {

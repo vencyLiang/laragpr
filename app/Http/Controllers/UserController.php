@@ -39,10 +39,10 @@ class UserController extends Controller{
         $this->user->withdraw_password = Hash::make($validateData['set_withdraw_password']);
         $res = $this->user->save();
         if($res){
-            return '1';
+            return ['message' => '绑定提现钱包成功','status' => 200];
         }else{
             //系统出错
-            return '2';
+            return ['message' => '绑定提现钱包失败','status' => 500];
         }
     }
 
@@ -54,14 +54,14 @@ class UserController extends Controller{
             $res = $this->user->save();
             if($res){
                 //修改提现密码成功
-                return '1';
+                return ['message' => '修改提现密码成功','status' => 200];
             }else{
                 //系统出错
-                return '2';
+                return ['message' => '修改提现密码成功','status' => 500];
             }
         }else{
             //提现密码并未改变；
-            return '0';
+            return ['message' => '没有修改提现密码','status' => 200];
         }
     }
 

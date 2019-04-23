@@ -4,10 +4,10 @@
  * Date: 2019/3/20
  * Time: 16:40
  */
-namespace app\coins\controller;
-use api\common\Coins;
-use think\Db;
-class UsdtTask
+namespace App\Http\Controllers;
+use App\Extras\Common\Coins;
+use DB;
+class UsdtController extends Controller
 {
     /**
      * 充值业务逻辑定时任务。
@@ -19,7 +19,7 @@ class UsdtTask
         $params =['action'=>"usdt_omni_getcurrentconsensushash"];
         $currentBlock = Coins::getResult($params);
         //最近扫描的区块；
-        $latestScannedBlock = Db::table('usdt_scan_records')->order('block_num desc')->limit(1)->find();
+        $latestScannedBlock = DB::table('usdt_scan_records')->orderByRaw('block_num desc')->limit(1)->first();
         if(! $latestScannedBlock){
             $currentBlockData = self::getBlockData($currentBlock['block']);
             $cbData['block_num'] = $currentBlock['block'];

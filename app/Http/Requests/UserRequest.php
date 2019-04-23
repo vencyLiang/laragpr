@@ -34,6 +34,7 @@ class UserRequest extends FormRequest
             'set_withdraw_password'=>['sometimes','required','between:6,12','confirmed'],
             //修改提现密码的的表单，新密码的name属性值为update_withdraw_password;
             //以下是提现时表单中提现密码对应的name属性值，以及修改提现密码时旧提现密码的name属性值
+            'update_withdraw_password'=>['sometimes','nullable','between:6,12','confirmed'],
             'withdraw_password'=>['sometimes','required',new WithDrawPasswordValidator ]
         ];
     }
@@ -49,6 +50,8 @@ class UserRequest extends FormRequest
             'set_withdraw_password.required'=>'提现密码必填',
             'set_withdraw_password.confirmed'=>'两次提现密码不一致',
             'set_withdraw_password.between'=>'提现密码应在6-12位',
+            'update_withdraw_password.confirmed'=>'两次提现密码不一致',
+            'update_withdraw_password.between'=>'提现密码应在6-12位',
             'withdraw_password.required'=>'提现密码必填',
         ];
     }

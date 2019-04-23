@@ -37,15 +37,16 @@ class Bonus
                 foreach ($parentsModel as $parentItem) {
                     if ($parentItem->invite_code == $user->up_invite_code) {
                         $totalBonus += $directBonus;
-                        $parentItem->account_bonus += $directBonus;
                         $num = $directBonus;
                     } else {
                         $totalBonus += $levelBonus;
-                        $parentItem->account_bonus += $levelBonus;
                         $num = $levelBonus;
                     }
-                    $parentItem->save();
-                    $parentItem->accountToRec()->save([
+                    $currency = play_config()->currency;
+                    $fieldName = $currency."_balance";
+                    $parentItem->account->$fieldName += $num;
+                    $parentItem->account->save();
+                    $parentItem->accountToRec()->create([
                         'user_id' => $user->id ,
                         'from_address' => $user->platform_wallet_address ,
                         'to_address' => $parentItem->platform_wallet_address ,

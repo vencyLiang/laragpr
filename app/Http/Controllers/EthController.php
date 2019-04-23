@@ -5,13 +5,17 @@
  * Time: 16:40
  */
 namespace App\Http\Controllers;
+use App\Models\UserWalletAccount;
+use App\Models\User;
+use App\Extras\Task\Activate;
 use DB;
 use App\Extras\Common\Coins;
-class EthTaskController
+class EthController
 {
 
-    /**
-     * 充值业务逻辑定时任务。
+    /**充值业务逻辑定时任务。
+     * @return bool|string
+     * @throws \Exception
      */
     public function  ethRecharge(){
         ini_set('memory_limit','10G');
@@ -29,7 +33,7 @@ class EthTaskController
             return "start!";
         }else{
             //扫描所有未完成的区块
-            $continue = DB::table('eth_scan_records')->where('is_end',0)->select();
+            $continue = DB::table('eth_scan_records')->where('is_end',0)->get()->toArray();
             foreach($continue as $item){
                 self::scanEthBlock($item['block_num']);
             }
@@ -49,6 +53,7 @@ class EthTaskController
 
     /**单个区块扫描记录的逻辑：遍历交易数组将合乎要求的充值交易入库，并更新用户账户表。
      * @param $blockNum
+     * @throws \Exception
      */
     private static function scanEthBlock($blockNum){
         $method = 'eth_eth_getBlockByNumber';
@@ -62,7 +67,7 @@ class EthTaskController
                         'trans_num' => count($result['transactions']),
                         'generate_time' => date('Y-m-d H:i:s', $result['timestamp'])
                 ];
-                DB::table('eth_scan_records')->strict(false)->insert($data);
+                DB::table('eth_scan_records')->insert($data);
             }
             foreach($result['transactions'] as $transaction){
                 self::checkTxid($transaction);
@@ -87,7 +92,8 @@ class EthTaskController
 
     /**判断某笔交易是否为本平台充值交易的逻辑
      * @param $scanResult
-     * @return boolean
+     * @return bool
+     * @throws \Exception
      */
     private static function checkTxid($scanResult)
     {
@@ -105,13 +111,13 @@ class EthTaskController
             if($exist){
                 if(!$exist['is_confirmed'] && isset($scanResult['blockNumber']) && self::ethConfirmations($scanResult['blockNumber']) >= 16){
                     self::confirmRecharge($check['user_id'],$scanResult['hash'],$check['eth_balance'] + $data['num']);
-                    CoinApiController::synCenter($data);
+                    CoinController::synCenter($data);
                 }
             }else{
                 if ( self::ethConfirmations($scanResult['blockNumber']) >= 16) {
                     $data['is_confirmed'] = 1;
-                    DB::table("user_wallet_account")->where('user_id',$data['user_id'])->setInc('eth_balance',$data['num']);
-                    CoinApiController::synCenter($data);
+                    DB::table("user_wallet_account")->where('user_id',$data['user_id'])->increment('eth_balance',$data['num']);
+                    CoinController::synCenter($data);
                 }
                 DB::table('running_account')->insert($data);
             }
@@ -121,17 +127,26 @@ class EthTaskController
     }
 
 
-    /**区块确认后，数据库的充值上分。
+    /**区块确认后，数据库的充值上分.
      * @param $userId
      * @param $txid
      * @param $amount
      * @return bool|string
+     * @throws \Exception
      */
     private static function  confirmRecharge($userId,$txid,$amount){
         DB::beginTransaction();
         try{
-            DB::table('user_wallet_account')->where('user_id',$userId)->setInc('eth_balance',$amount);
-            DB::table('running_account')->where('txid_hash',$txid)->setField('is_confirmed',1);
+            $userAccountInfo = UserWalletAccount::where('user_id',$userId)->first();
+            $userAccountInfo->eth_balance += $amount;
+            $userModel = User::find($userId);
+            if($userAccountInfo->eth_balance >= ($cost = play_config()->activate_cost) && !$userModel->activation_status){
+                Activate::activate($userModel);
+                $userAccountInfo->eth_balance -= $cost;
+            }
+            $userAccountInfo->save();
+            //DB::table('user_wallet_account')->where('user_id',$userId)->increment('eth_balance',$amount);
+            DB::table('running_account')->where('txid_hash',$txid)->update(['is_confirmed' => 1]);
             DB::commit();
             return true;
         }catch (\Exception $e){
@@ -141,13 +156,13 @@ class EthTaskController
         }
     }
 
-    /**
-     * 检查已有充值记录在区块链上的确认数。
+    /**检查已有充值记录在区块链上的确认数。
+     * @throws \Exception
      */
     public static function  checkExistRechargeConfirm(){
         ini_set('memory_limit','10G');    // 设置临时最大内存占用
         set_time_limit(0);   // 设置脚本最大执行时间 为0 永不过期
-        $forConfirming = DB::table('running_account')->where(['is_confirmed'=> 0,'coin_type' => 2,'transfer_type' => 3])->select();
+        $forConfirming = DB::table('running_account')->where(['is_confirmed'=> 0,'coin_type' => 2,'transfer_type' => 3,'fail_type'=> NULL])->get()->toArray();
         foreach($forConfirming as $confirm){
             $params =['action'=>"eth_eth_getTransactionByHash","txid"=>$confirm['txid_hash']];
             $checkResult = Coins::getResult($params);
@@ -155,14 +170,17 @@ class EthTaskController
                 $ethConfirmations =  self::ethConfirmations([$checkResult['result']['blockNumber']]);
                 if($ethConfirmations >= 16){
                     self::confirmRecharge($confirm['user_id'],$confirm['txid_hash'],$confirm['num']);
-                    CoinApiController::synCenter($confirm);
+                    CoinController::synCenter($confirm);
                 }else{
-                    DB::table('running_account')->where('txid_hash',$confirm['txid_hash'])->setField('confirmations',$checkResult['confirmations']);
+                    DB::table('running_account')->where('txid_hash',$confirm['txid_hash'])->update(['confirmations',$checkResult['confirmations']]);
                 }
             }
         }
     }
 
+    /**
+     * @throws \Exception
+     */
     public function  confirmWithdraw(){
         ini_set('memory_limit','2G');    // 设置临时最大内存占用
         set_time_limit(0);   // 设置脚本最大执行时间 为0 永不过期
@@ -180,11 +198,11 @@ class EthTaskController
                         'fee' => decodeHex($checkResult['gas']) * toCommonValue($checkResult['gasPrice']),
                         'is_confirmed' => 1
                     ];
-                    DB::startTrans();
+                    DB::beginTransaction();
                     try {
                         DB::table('running_account')->where('txid_hash', $confirm['txid_hash'])->update($data);
                         DB::table('center_address')->where('txid_hash', $confirm['txid_hash'])->update($data);
-                        DB::table('user_wallet_account')->where('user_id', $confirm['user_id'])->setDec('eth_frozen', $confirm['num']);
+                        DB::table('user_wallet_account')->where('user_id', $confirm['user_id'])->increment('eth_frozen', $confirm['num']);
                         DB::commit();
                     }catch (\Throwable $e){
                         DB::rollback();
@@ -197,11 +215,15 @@ class EthTaskController
                         'fail_type' => 1,
                         'err_msg' =>$checkResult['error']['message'],
                         ];
-                DB::startTrans();
+                DB::beginTransaction();
                 try {
                 DB::table('running_account')->where('txid_hash',$confirm['txid_hash'])->update($data);
                 DB::table('center_address')->where('txid_hash',$confirm['txid_hash'])->update($data);
-                DB::table('user_wallet_account')->where('user_id',$confirm['user_id'])->dec('eth_frozen',$confirm['num'])->inc('eth_balance',$confirm['num'])->update();
+                DB::table('user_wallet_account')->where('user_id',$confirm['user_id'])->update([
+                    "eth_balance" => DB::raw("eth_balance+{$confirm['num']}"),
+                    "eth_frozen" => DB::raw("eth_frozen-{$confirm['num']}")
+                ]);
+                DB::commit();
                 }catch (\Throwable $e){
                     DB::rollback();
                     DB::commit();

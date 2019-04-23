@@ -11,7 +11,7 @@ class User extends Authenticatable
 {
     use Notifiable;
 
-    protected $guarded = ['invite_code', 'activation_status'];
+    protected $guarded = [];
 
     protected $hidden = ['password','remember_token'];
 
@@ -21,7 +21,7 @@ class User extends Authenticatable
     }
 
     public function account(){
-        return $this->hasOne(UserWalletAccount::class,'uid');
+        return $this->hasOne(UserWalletAccount::class,'user_id');
     }
 
     public function accountFormRec(){
@@ -61,12 +61,15 @@ class User extends Authenticatable
     }
 
     /**功能：获取当前用户所有上级用户的id数组；
+     * @param $userPath
      * @param  $level: 从父代开始取$level代；
      * @return array
      */
-    public function  get_all_parentsIdArr($level = NULL){
+    public function  get_all_parentsIdArr($userPath = "",$level = NULL){
         //获取层级路径字符串
-        $userPath = $this->attributes['path'];
+        if($userPath === "") {
+            $userPath = $this->attributes['path'];
+        }
         //将层级关系转化为数组；
         $parentArr = explode('-',$userPath);
         //最后一个元素表示本身，移除；
@@ -88,7 +91,7 @@ class User extends Authenticatable
      * @return mixed
      */
     public function get_all_parentsModel($level = NULL){
-        $parentArr = $this->get_all_parentsIdArr($level);
+        $parentArr = $this->get_all_parentsIdArr("",$level);
         $allParentsModel =  self::find($parentArr);
         return $allParentsModel;
     }

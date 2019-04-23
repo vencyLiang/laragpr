@@ -11,16 +11,16 @@ class Activate{
      * @param User $user
      * @return bool
      */
-    public function activate(User $user){
+    public static function activate(User $user){
           //设定邀请码；
           $activationInfo['invite_code'] = generate_invite_code($user->id) ;
           //设定激活状态；
           $activationInfo['activation_status'] = '1';
           //获取激活时间；
-          $activationInfo['activate_time']  = time();
+          $activationInfo['activate_time']  = date('Y-m-d H:i:s',time());
           //如果上级邀请码为平台邀请码，则新开分区
           $up_invite_code = $user->up_invite_code;
-          if($up_invite_code === play_config()->platform_wallet_address){
+          if($up_invite_code === play_config()->platform_invite_code){
               $activationInfo['pid'] = 0;
               $activationInfo['path'] = '0-'.$user->id;
           }else{
@@ -33,7 +33,7 @@ class Activate{
                   $activationInfo['pid'] = $parentInfo->id;
                   $activationInfo['path'] = "$parentInfo->path-$user->id";
               }else{
-                  $parentUser = $this->down_position($siblingsCollection);
+                  $parentUser = self::down_position($siblingsCollection);
                   $activationInfo['pid'] = $parentUser->id;
                   $activationInfo['path'] = "$parentUser->path-$user->id";
               }
@@ -41,13 +41,15 @@ class Activate{
           DB::beginTransaction();
           try{
               $user->update($activationInfo);
-              $upUids = $user->get_all_parentsIdArr();
+              $upUids = $user->get_all_parentsIdArr($activationInfo['path']);
               $relationArr = [];
               $totalLevel = count($upUids);
+              if(!$totalLevel){
               foreach ($upUids as $k => $uid) {
                     $relationArr[] = ['uid' => $user->id, 'up_uid' => $uid, 'level' => $totalLevel - $k ];
               }
               DB::table("user_relation")->insert($relationArr);
+              }
               ActivationRec::create([
                       //触发的用户；
                       'user_id' => $user->id,
@@ -74,7 +76,7 @@ class Activate{
      * @param $collection //上级用户的下级子用户结果集。
      * @return mixed
      */
-    public function down_position(Collection $collection){
+    public static function down_position(Collection $collection){
         $subItems = [];
         $subItemsCounts = [];
         foreach($collection as $item) {
@@ -91,18 +93,18 @@ class Activate{
                    unset($subItemsCounts[$minIndex]);
                   }
             }while($minIndex);
-            $parentUser = User::where('activate_status','1')->where(function($query)use($minItemsArr){
-                $query->whereIn('invite_code',$minItemsArr);})->orderBy('active_time','asc')->offset(0)->limit(1)->first();
+            $parentUser = User::where('activation_status','1')->where(function($query)use($minItemsArr){
+                $query->whereIn('invite_code',$minItemsArr);})->orderBy('activate_time','asc')->offset(0)->limit(1)->first();
             return $parentUser;
         }else{
             if($min<3){
                 $possiblePositionArr = array_keys($subItems);
-                $parentUser = User::where('activate_status','1')->where(function($query)use($possiblePositionArr){
-                    $query->whereIn('invite_code',$possiblePositionArr);})->orderBy('active_time','asc')->offset(0)->limit(1)->first();
+                $parentUser = User::where('activation_status','1')->where(function($query)use($possiblePositionArr){
+                    $query->whereIn('invite_code',$possiblePositionArr);})->orderBy('activate_time','asc')->offset(0)->limit(1)->first();
                 return $parentUser;
               }else{
                 $allSubItemsCollection = User::where('activate_status','1')->whereIn('up_invite_code',$collection->pluck('invite_code'))->get();
-                return $this->down_position($allSubItemsCollection);
+                return self::down_position($allSubItemsCollection);
             }
         }
     }

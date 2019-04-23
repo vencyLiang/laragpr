@@ -10,7 +10,7 @@ namespace App\Http\Controllers;
 use App\Extras\Common\Coins;
 use App\Extras\Task\SystemConfig;
 use Illuminate\Support\Facades\DB;
-class CoinApiController extends Controller{
+class CoinController extends Controller{
     use SystemConfig;
     public function __construct()
     {
@@ -23,8 +23,8 @@ class CoinApiController extends Controller{
      * @return array|Null|string
      */
      public function generateAddress($unique = null,$type = 'usdt'){
-        $unique =  $unique ?? input('param.unique');
-        $type =  $type ?? input('param.type');
+        $unique =  $unique ?? request('unique');
+        $type =  $type ?? request('type');
         if(!$unique){
             return ['status'=> 400 ,'msg'=> 'Must Provide An Account Name!','data'=>""];
         }
@@ -63,7 +63,7 @@ class CoinApiController extends Controller{
         if(!request()->isMethod('post')){
             return ['status'=>400 , 'msg'=>"HTTP_BAD_REQUEST"];
         }
-        $data  = $data ?? input();
+        $data  = $data ?? request();
         if(empty($data)){
             return ['status'=>404 , 'msg'=>"HTTP_NOT_FOUND"];
         }

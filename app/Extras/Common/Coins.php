@@ -49,7 +49,7 @@ class Coins
      */
     public static function getResult($params = NULL  )
     {
-        $params = $params ?? input('param.');
+        $params = $params ?? request();
         if (!empty($params['action'])) {
             $method = $params['action'];
             $coinConfigArr = Coins::checkCoinConfig($method);
