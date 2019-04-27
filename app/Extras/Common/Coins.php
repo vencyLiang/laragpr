@@ -14,7 +14,7 @@ class Coins
     private static $coinConfigArr = [
         'usdt' => ['namespace' => 'Btc','class' => 'Bitcoin', 'host' => '154.209.1.168', 'port' => '8332'],
         'btc' => ['namespace' => 'Btc','class' => 'Bitcoin', 'host' => '', 'port' => ''],
-        'eth' => ['namespace' => 'Eth','class' => 'Ethereum', 'host' => '154.216.1.180', 'port' => '8545'],
+        'eth' => ['namespace' => 'Eth','class' => 'Ethereum', 'host' => '154.216.1.180', 'port' => '9672'],
     ];
 
     public static function checkCoinConfig($method)

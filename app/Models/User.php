@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use app\coins\model\UserWalletAccount;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 
@@ -80,7 +79,7 @@ class User extends Authenticatable
             $parentArr[$k] = (int) $v;
         }
         if(!empty($level)){
-            $parentArr = array_slice($parentArr,-1,$level,true);
+            $parentArr = array_slice($parentArr, - $level,NULL,true);
         }
         return $parentArr;
     }
@@ -106,7 +105,7 @@ class User extends Authenticatable
         //获取上级用户id；
         $parentUserId = array_pop($parentArr);
         //获取邀请其注册的用户id；
-        $sendInviteUserId = self::where('invite_code',$this->attributes['up_invite_code'])->id;
+        $sendInviteUserId = self::where('invite_code',$this->attributes['up_invite_code'])->first()->id;
         //如果不是同一个用户
         if($parentUserId != $sendInviteUserId){
             return true;
@@ -130,22 +129,15 @@ class User extends Authenticatable
                 });
             }
         )->get();
+        //return $allChildrenCollection;
         if($allChildrenCollection) {
             $allChildrenPath = $allChildrenCollection->pluck('path')->all();
             $childrenOrderByLevel = [];
             foreach ($allChildrenPath as  $childrenPath) {
                 $childrenPath = substr(strstr($childrenPath, "{$this->attributes['id']}"), 2);
-                if (strlen($childrenPath) >= 3) {
-                    $childrenPathArr = explode('-', $childrenPath);
-                    foreach($childrenPathArr as $k=>$v){
-                        $childrenPathArr[$k] = (int)$v;
-                    }
-                } else {
-                    $childrenPathArr = [intval($childrenPath)];
-                }
-                //$allChildrenPath[$key] = $childrenPathArr;
+                $childrenPathArr = explode('-', $childrenPath);
                 for($m = 0;$m <= count($childrenPathArr)-1;$m++){
-                        if( ! in_array($childrenPathArr[$m], $childrenOrderByLevel['level' . ($m + 1)]) ){
+                        if(!isset($childrenOrderByLevel['level' . ($m + 1)]) || ! in_array($childrenPathArr[$m], $childrenOrderByLevel['level' . ($m + 1)]) ){
                         $childrenOrderByLevel['level' . ($m + 1)][] = $childrenPathArr[$m];
                     }
                 }

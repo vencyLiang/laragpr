@@ -44,8 +44,8 @@ class EthController
         //将最近区块外的所有已完成扫描的区块记录全部删除;
         DB::table('eth_scan_records')->where([['block_num','<>',$latestScannedBlockNum],['is_end','=',1]])->delete();
         //接着扫描新块；
-        if ($currentBlock['block'] !== $latestScannedBlockNum){
-            for($i = $latestScannedBlockNum +1; $i<=$currentBlock['block'];$i++ ){
+        if (($block = decodeHex($currentBlock['result'])) != $latestScannedBlockNum){
+            for($i = $latestScannedBlockNum +1; $i<= $block;$i++ ){
                 self::scanEthBlock($i);
             }
         }
@@ -59,6 +59,10 @@ class EthController
     private static function scanEthBlock($blockNum){
         $method = 'eth_eth_getBlockByNumber';
         $result = Coins::$method(...[$blockNum,true]);
+        if(!is_numeric($blockNum)){
+            $blockNum = decodeHex($blockNum);
+        }
+        $num = 0;
         if(!isset($result['error'])){
             $result = $result['result'];
             $existRec =  DB::table('eth_scan_records')->where('block_hash',$result['hash'])->update(['is_end'=>1]);
@@ -66,15 +70,26 @@ class EthController
                 $data = ['block_num' => $blockNum,
                         'block_hash' => $result['hash'],
                         'trans_num' => count($result['transactions']),
-                        'generate_time' => date('Y-m-d H:i:s', $result['timestamp'])
+                        'generate_time' => date('Y-m-d H:i:s',decodeHex($result['timestamp']))
                 ];
                 DB::table('eth_scan_records')->insert($data);
             }
             foreach($result['transactions'] as $transaction){
-                self::checkTxid($transaction);
+                $res = self::checkTxid($transaction);
+                $log = [ 'block_num' => $blockNum, 'txid'=> $transaction['hash'], 'time' => date('Y-m-d H:i:s',time())];
+                if(is_numeric($res)){
+                    $log['type'] = 'yes';
+                    $log['confirmations'] = $res;
+                    $num ++;
+                }else{
+                    $log['type'] = 'no';
+                }
+                file_put_contents("/www/wwwlogs/scan_eth_block.log",json_encode($log)."\n",FILE_APPEND);
             }
         }
         DB::table('eth_scan_records')->where('block_num',$blockNum)->update(['is_end'=>1]);
+        $countLog = ['block_num' => $blockNum, 'num'=> $num, 'time' => date('Y-m-d H:i:s',time())];
+        file_put_contents("/www/wwwlogs/scan_eth_block.log",json_encode($countLog)."\n",FILE_APPEND);
     }
 
     /**
@@ -98,7 +113,7 @@ class EthController
      */
     private static function checkTxid($scanResult)
     {
-        $check = DB::table('user_wallet_account')->where('eth_address',$scanResult['to'])->first();
+        $check = DB::table('user_wallet_account')->where([['eth_address','=',$scanResult['to']],['eth_address','<>',NULL]])->first();
         if ($check) {
             $check = get_object_vars($check);
             $exist = DB::table('running_account')->where(['txid_hash'=> $scanResult['hash'],'coin_type'=> 2])->first();
@@ -110,21 +125,22 @@ class EthController
             $data['block_hash'] = $scanResult['blockHash'];
             $data['coin_type'] = 2;
             $data['transfer_type'] = 3;
+            $confirmations = self::ethConfirmations($scanResult['blockNumber']);
             if($exist){
                 $exist = get_object_vars($exist);
-                if(!$exist['is_confirmed'] && isset($scanResult['blockNumber']) && self::ethConfirmations($scanResult['blockNumber']) >= 16){
+                if(!$exist['is_confirmed'] && isset($scanResult['blockNumber']) && $confirmations >= 16){
                     self::confirmRecharge($check['user_id'],$scanResult['hash'],$check['eth_balance'] + $data['num']);
                     CoinController::synCenter($data);
                 }
             }else{
-                if ( self::ethConfirmations($scanResult['blockNumber']) >= 16) {
+                if ( $confirmations >= 16) {
                     $data['is_confirmed'] = 1;
                     DB::table("user_wallet_account")->where('user_id',$data['user_id'])->increment('eth_balance',$data['num']);
                     CoinController::synCenter($data);
                 }
                 DB::table('running_account')->insert($data);
             }
-            return true;
+            return $confirmations;
         }
         return false;
     }
@@ -173,7 +189,7 @@ class EthController
             $params =['action'=>"eth_eth_getTransactionByHash","txid"=>$confirm['txid_hash']];
             $checkResult = Coins::getResult($params);
             if(!isset($checkResult['error']) && isset($checkResult['result']['blockNumber'])){
-                $ethConfirmations =  self::ethConfirmations([$checkResult['result']['blockNumber']]);
+                $ethConfirmations =  self::ethConfirmations($checkResult['result']['blockNumber']);
                 if($ethConfirmations >= 16){
                     self::confirmRecharge($confirm['user_id'],$confirm['txid_hash'],$confirm['num']);
                     CoinController::synCenter($confirm);

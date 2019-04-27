@@ -2,7 +2,7 @@
 namespace App\Extras\Coins\Eth;
 class EthereumBaseMethod extends JSON_RPC
 {
-	private function ether_request($method, $params=array())
+	protected function ether_request($method, $params=array())
 	{
 		try
 		{
@@ -17,7 +17,7 @@ class EthereumBaseMethod extends JSON_RPC
 	function __call($method,$params){
 	    return $this->request($method,$params);
     }
-	private function decode_hex($input)
+	protected function decode_hex($input)
 	{
 		if(substr($input, 0, 2) == '0x')
 			$input = substr($input, 2);

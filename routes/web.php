@@ -17,3 +17,5 @@ Route::get('/test','TestController@test');
 Route::middleware('auth')->get('/','IndexController@index');
 Route::get('coin/create/{unique?}/{type?}', 'CoinController@generateAddress');
 Route::get('activate/{user}', 'TestController@testActivate');
+Route::get('bonus/{user}/{userPath?}', 'TestController@testBonus');
+Route::get('children/{user}', 'TestController@testChildren');

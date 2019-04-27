@@ -31,12 +31,12 @@ function generate_invite_code($user_id) {
 }
 
 function toTransferValue($value){
-    $weiNum = bcmul($value,1e18);//高精度浮点数相乘
+    $weiNum = bcmul($value,'1000000000000000000');//高精度浮点数相乘
     return encodeToHexString($weiNum);
 }
 
 function toCommonValue($weiValue){
-    return bcdiv(decodeHex($weiValue),1e18);
+    return bcdiv(decodeHex($weiValue),'1000000000000000000',6);
 }
 
 
@@ -52,5 +52,5 @@ function encodeToHexString($number)
  */
 function decodeHex($hexString){
     $hexString = substr($hexString,2);
-    return (int)base_convert($hexString, 16, 10);
+    return base_convert($hexString, 16, 10);
 }

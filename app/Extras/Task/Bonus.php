@@ -18,12 +18,13 @@ class Bonus
     /**功能：用户激活时，各层级的奖金分配；
      * @param User $user
      * @param $userPath
-     * @return bool | null
+     * @return bool
      */
     public static function generate_bonus(User $user,$userPath  = ""){
         self::getConfig();
         //获取该用户在其路径上的全部上级用户集合
         $parentsModel = $user->get_all_parentsModel($userPath,GENERATIONS);
+        //return $parentsModel;
         DB::beginTransaction();
         try {
             //初始化总流动金额；
@@ -43,7 +44,8 @@ class Bonus
                         $totalBonus += $levelBonus;
                         $num = $levelBonus;
                     }
-                    $currency = play_config()->currency;
+                    $currency = [0 => 'usdt', 1 => 'eth'];
+                    $currency = $currency[play_config()->currency];
                     $fieldName = $currency."_balance";
                     $parentItem->account->$fieldName += $num;
                     $parentItem->account->save();
@@ -72,7 +74,7 @@ class Bonus
                         $num = $directBonus;
                     }
                     $parentItem->save();
-                    $parentItem->accountToRec()->save([
+                    $parentItem->accountToRec()->create([
                         'user_id' => $user->id ,
                         'from_address' => $user->platform_wallet_address ,
                         'to_address' => $parentItem->platform_wallet_address ,
@@ -85,7 +87,7 @@ class Bonus
                 }
             }
             DB::commit();
-            return NULL;
+            return true;
         }catch (Exception $e){
             DB::rollBack();
             ActivationRec::create([
