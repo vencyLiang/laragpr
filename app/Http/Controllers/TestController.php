@@ -14,7 +14,7 @@ class TestController extends Controller
 {
     function test()
     {
-        $check = DB::table('user_wallet_account')->where([['eth_address','<>',NULL]])->toSql();
+        $check = DB::table('user_wallet_account')->where([['eth_address','=',NULL],['eth_address','<>',null]])->toSql();
 
         dd( $check);
         //dd(get_object_vars(0));

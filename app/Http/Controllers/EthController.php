@@ -111,8 +111,10 @@ class EthController
      * @return bool
      * @throws \Exception
      */
-    private static function checkTxid($scanResult)
-    {
+    private static function checkTxid($scanResult){
+        if(!$scanResult['to']){
+            return false;
+        }
         $check = DB::table('user_wallet_account')->where([['eth_address','=',$scanResult['to']],['eth_address','<>',NULL]])->first();
         if ($check) {
             $check = get_object_vars($check);

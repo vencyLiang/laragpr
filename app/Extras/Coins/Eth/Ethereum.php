@@ -7,7 +7,7 @@
  */
 
 namespace App\Extras\Coins\Eth;
-
+use Exception;
 
 class Ethereum extends EthereumBaseMethod{
     public $base = "1000000000000000000";
@@ -54,10 +54,14 @@ class Ethereum extends EthereumBaseMethod{
         if (!ctype_xdigit($value)) {
             $value = $this->toWei($value);
         }
-        $gas = $this->eth_estimateGas($from, $to, $value);//16进制 消耗的gas 0x5209
-        $gasPrice = $this->eth_gasPrice();//价格 0x430e23400
-        //$password = "123";//解锁密码
-        $status = $this->personal_unlockAccount($from, $password);//解锁
+        try {
+            $gas = $this->eth_estimateGas($from, $to, $value);//16进制 消耗的gas 0x5209
+            $gasPrice = $this->eth_gasPrice();//价格 0x430e23400
+            //$password = "123";//解锁密码
+            $status = $this->personal_unlockAccount($from, $password);//解锁
+        }catch (Exception $exception){
+            return $exception->getMessage();
+        }
         if (!$status) {
             return '解锁失败';
         }
@@ -69,7 +73,6 @@ class Ethereum extends EthereumBaseMethod{
             "value" => $value,//2441406250
             "data" => "",
         );
-
         $data = $this->request(__FUNCTION__, [$params]);
         if (empty($data['error']) && !empty($data['result'])) {
             return $data['result'];//转账之后，生成HASH
@@ -132,7 +135,11 @@ class Ethereum extends EthereumBaseMethod{
             "value" => $value
         );
         $data = $this->request(__FUNCTION__, [$params]);
-        return $data['result'];
+        if(isset($data['error'])){
+            throw new Exception($data['error']['message']);
+        }else{
+            return $data['result'];
+        }
     }
 
     /**获得当前gas price
@@ -143,7 +150,11 @@ class Ethereum extends EthereumBaseMethod{
     {
         $params = array();
         $data = $this->request(__FUNCTION__, $params);
-        return $data['result'];
+        if(isset($data['error'])){
+            throw new Exception($data['error']['message']);
+        }else{
+            return $data['result'];
+        }
     }
 
 
@@ -162,10 +173,10 @@ class Ethereum extends EthereumBaseMethod{
             100,
         );
         $data = $this->request(__FUNCTION__, $params);
-        if (!empty($data['error'])) {
-            return $data['error']['message'];//解锁失败
-        } else {
-            return $data['result'];//成功返回true
+        if(isset($data['error'])){
+            throw new Exception($data['error']['message']);
+        }else{
+            return $data['result'];
         }
     }
 
