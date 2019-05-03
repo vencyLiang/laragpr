@@ -1,0 +1,77 @@
+<?php
+/**
+ * Created by Vency.
+ * Date: 2019/3/19
+ * Time: 11:11
+ * 多币种节点RPC配置与RPC方法集合类；
+ */
+
+namespace App\Extras\Common;
+
+class Coins
+{
+    const NOT_EXIST = "this operation not exist";
+    private static $coinConfigArr = [
+        'usdt' => ['namespace' => 'Btc','class' => 'Bitcoin', 'host' => '154.209.1.168', 'port' => '8332'],
+        'btc' => ['namespace' => 'Btc','class' => 'Bitcoin', 'host' => '', 'port' => ''],
+        'eth' => ['namespace' => 'Eth','class' => 'Ethereum', 'host' => '154.216.1.180', 'port' => '9672'],
+    ];
+
+    public static function checkCoinConfig($method)
+    {
+        $coinMethodPrefix = strstr($method, "_", true);
+        if (!array_key_exists($coinMethodPrefix, self::$coinConfigArr)) {
+            return NULL;
+        }
+        return self::$coinConfigArr[$coinMethodPrefix];
+    }
+
+    public static function __callstatic($method, $params)
+    {
+        $coinMethod = substr(strstr($method, "_"), 1);
+        $coin = null;
+        $coinConfigArr = self::checkCoinConfig($method);
+        if (empty($coinConfigArr)) {
+            return self::NOT_EXIST;
+        } else {
+            $coinClass = "App\Extras\Coins"."\\".$coinConfigArr['namespace']."\\".$coinConfigArr['class'];
+            //$coin = new Bitcoin($coinConfigArr['host'],$coinConfigArr['port']);
+            $coin = new $coinClass($coinConfigArr['host'], $coinConfigArr['port']);
+            return $coin->$coinMethod(...$params);
+        }
+    }
+
+    /**一系列操作币的方法；
+     * 如生成usdt的钱包地址 参数则为 ['action'=>'usdt_getnewaddress','account'=>"abcd"]
+     * 除第一个键名必须为action且其值必需外，其他键名可取任意字符串，具体个数根据ACTION指定的方法而定，且在数组中的顺序不可任意改变
+     * @param $params array ['action'=>'prefix_method', 'anyString'=> "",...]
+     * @return array|string|Null
+     */
+    public static function getResult($params = NULL  )
+    {
+        $params = $params ?? request();
+        if (!empty($params['action'])) {
+            $method = $params['action'];
+            $coinConfigArr = Coins::checkCoinConfig($method);
+            unset($params['action']);
+            foreach ($params as $k => $v) {
+                if (is_numeric($v)) {
+                    if (strpos($v, '.')) {
+                        $params[$k] = floatval($v);
+                    } else {
+                        $params[$k] = intval($v);
+                    }
+                }
+            }
+            if ($coinConfigArr) {
+                return Coins::$method(...array_values($params));
+            } else {
+                return ["msg" => "Forbidden Operation", "status" => 404];
+            }
+        } else {
+            return ["msg" => "Lack Of Params", "status" => 404];
+        }
+    }
+}
+
+

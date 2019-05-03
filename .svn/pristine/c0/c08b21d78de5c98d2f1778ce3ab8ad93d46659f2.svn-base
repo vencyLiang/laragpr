@@ -1,0 +1,86 @@
+<?php
+
+namespace App\Admin\Controllers;
+
+use App\Models\System;
+use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
+use Encore\Admin\Controllers\HasResourceActions;
+use Encore\Admin\{Facades\Admin,Layout\Content,Show,Form};
+
+
+class SystemController extends Controller
+{   use HasResourceActions;
+    public function show($id, Content $content)
+    {
+        return $content
+            ->header('系统配置')
+            ->description('配置详情')
+            ->body(Admin::show(System::findOrFail($id), function (Show $show) {
+
+                $show->panel()
+                    ->style('danger')
+                    ->title('系统配置详情')
+                    ->tools(function ($tools) {
+                        $tools->disableList();
+                        $tools->disableDelete();
+                    });
+                $show->platform_invite_code('平台邀请码');
+                $show->direct_bonus_ratio('直推奖金返点比率');
+                $show->level_bonus_ratio('层级奖金返点比率');
+                $show->activate_cost('权益资格激活费用');
+                $show->generations('可返奖的代数');
+                $show->currency('平台流通与结算币种');
+                $show->transfer_fee('转账手续费(平台内至平台外)');
+                $show->center_usdt_address('中心钱包地址(usdt)');
+                $show->center_eth_address('中心钱包地址(eth)');
+                $show->center_eth_passowrd('中心钱包地址对应的密码(eth)');
+            }));
+    }
+
+    /**
+     * Edit interface.
+     *
+     * @param $id
+     * @return Content
+     */
+    public function edit($id, Content $content)
+    {
+        return $content
+            ->header('系统配置')
+            ->description('编辑')
+            ->row($this->form()->edit($id));
+    }
+
+
+    protected function form()
+    {
+        $form = new Form(new System());
+        $form->text('platform_invite_code','平台邀请码')->help('会员注册时，填此邀请码，将开新区');
+        $form->number('direct_bonus_ratio','直推奖金返点比率');
+        $form->number('level_bonus_ratio','层级奖金返点比率');
+        $form->number('activate_cost','权益资格激活费用');
+        $form->number('generations','可返奖的代数');
+        $states = [
+            'on'  => ['value' => 'eth', 'text' => 'ETH', 'color' => 'success'],
+            'off' => ['value' => 'btc', 'text' => 'USDT', 'color' => 'danger'],
+        ];
+        $form->switch('currency','平台流通与结算币种')->states($states);
+        $form->number('transfer_fee','转账手续费(平台内至平台外)');
+        $form->text('center_usdt_address','中心钱包地址(usdt)');
+        $form->text('center_eth_address','中心钱包地址(eth)');
+        $form->text('center_eth_passowrd','中心钱包地址对应的密码(eth)');
+
+        $form->tools(function (Form\Tools $tools) {
+
+            $tools->disableList();
+            $tools->disableDelete();
+        });
+        $form->footer(function (Form\Footer $footer){
+           $footer->disableCreatingCheck();
+        });
+
+        return $form;
+    }
+
+}

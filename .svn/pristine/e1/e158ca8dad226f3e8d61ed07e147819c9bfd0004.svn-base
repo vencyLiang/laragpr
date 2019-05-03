@@ -1,0 +1,140 @@
+<!--<script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>-->
+
+
+<?php $__env->startSection('content'); ?>
+    <script>
+        //var jQuery = jQuery.noConflict();
+        function ajax_check_invite(){
+            $.ajaxSetup({
+                headers: { 'X-CSRF-TOKEN' : '<?php echo e(csrf_token(), false); ?>' }
+            });
+            $.ajax({
+                'url':"<?php echo e(route('checkinvite'), false); ?>",
+                'type':"post",
+                'data': {'up_invite_code':$('#up_invite_code').val()},
+                'success':function (response) {
+                    if (response === '0'){
+                        $('#check_tip').html("<span style='color:red;'><b>邀请码无效</b></span>")
+                        $("#submitBtn").attr('disabled','disabled');
+                    }else if(response === '1'){
+                        $('#check_tip').html("<span style='color:green;'><b>邀请码有效</b></span>")
+                        $("#submitBtn").removeAttr('disabled');
+                    }else{
+                        $('#check_tip').html("<span style='color:orange;'><b>请填写邀请码</b></span>")
+                        $("#submitBtn").attr('disabled','disabled');
+                    }
+                }
+            })
+        }
+        $(function(){
+            ajax_check_invite();
+            $('#up_invite_code').bind('input propertychange',function () {
+                ajax_check_invite();
+            })
+        })
+    </script>
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header"><?php echo e(__('Register'), false); ?></div>
+
+                <div class="card-body">
+                    <form method="POST" action="<?php echo e(route('register'), false); ?>" aria-label="<?php echo e(__('Register'), false); ?>">
+                        <?php echo csrf_field(); ?>
+
+                        <div class="form-group row">
+                            <label for="name" class="col-md-4 col-form-label text-md-right"><?php echo e(__('Name'), false); ?></label>
+
+                            <div class="col-md-6">
+                                <input id="name" type="text" class="form-control<?php echo e($errors->has('name') ? ' is-invalid' : '', false); ?>" name="name" value="<?php echo e(old('name'), false); ?>" placeholder="用户名、邮箱、手机号至少填一项"  autofocus>
+
+                                <?php if($errors->has('name')): ?>
+                                    <span class="invalid-feedback" role="alert">
+                                        <strong><?php echo e($errors->first('name'), false); ?></strong>
+                                    </span>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+
+                        <div class="form-group row">
+                            <label for="email" class="col-md-4 col-form-label text-md-right"><?php echo e(__('E-Mail Address'), false); ?></label>
+
+                            <div class="col-md-6">
+                                <input id="email" type="email" class="form-control<?php echo e($errors->has('email') ? ' is-invalid' : '', false); ?>" name="email" value="<?php echo e(old('email'), false); ?>" placeholder="用户名、邮箱、手机号至少填一项" >
+
+                                <?php if($errors->has('email')): ?>
+                                    <span class="invalid-feedback" role="alert">
+                                        <strong><?php echo e($errors->first('email'), false); ?></strong>
+                                    </span>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label for="phone_num" class="col-md-4 col-form-label text-md-right"><?php echo e(__('Phone Number'), false); ?></label>
+
+                            <div class="col-md-6">
+                                <input id="phone_num" type="tel" class="form-control<?php echo e($errors->has('phone_num') ? ' is-invalid' : '', false); ?>" name="phone_num" value="<?php echo e(old('phone_num'), false); ?>" placeholder="用户名、邮箱、手机号至少填一项" >
+
+                                <?php if($errors->has('phone_num')): ?>
+                                    <span class="invalid-feedback" role="alert">
+                                        <strong><?php echo e($errors->first('phone_num'), false); ?></strong>
+                                    </span>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+
+                        <div class="form-group row">
+                            <label for="password" class="col-md-4 col-form-label text-md-right"><?php echo e(__('Password'), false); ?></label>
+
+                            <div class="col-md-6">
+                                <input id="password" type="password" class="form-control<?php echo e($errors->has('password') ? ' is-invalid' : '', false); ?>" name="password" required>
+
+                                <?php if($errors->has('password')): ?>
+                                    <span class="invalid-feedback" role="alert">
+                                        <strong><?php echo e($errors->first('password'), false); ?></strong>
+                                    </span>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+
+                        <div class="form-group row">
+                            <label for="password-confirm" class="col-md-4 col-form-label text-md-right"><?php echo e(__('Confirm Password'), false); ?></label>
+
+                            <div class="col-md-6">
+                                <input id="password-confirm" type="password" class="form-control" name="password_confirmation" required>
+                            </div>
+                        </div>
+
+                        <div class="form-group row">
+                            <label for="up_invite_code" class="col-md-4 col-form-label text-md-right"><?php echo e(__('Up Invite Code'), false); ?></label>
+
+                            <div class="col-md-6">
+                                <input id="up_invite_code" type="text" class="form-control<?php echo e($errors->has('up_invite_code') ? ' is-invalid' : '', false); ?>" name="up_invite_code" <?php if(isset($up_invite_code)): ?> value="<?php echo e($up_invite_code, false); ?>" <?php endif; ?> required>
+                                <div id = 'check_tip'></div>
+                                <?php if($errors->has('up_invite_code')): ?>
+                                    <span class="invalid-feedback" role="alert">
+                                        <strong><?php echo e($errors->first('up_invite_code'), false); ?></strong>
+                                    </span>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+
+                        <div class="form-group row mb-0">
+                            <div class="col-md-6 offset-md-4">
+                                <button type="submit" class="btn btn-primary"  id="submitBtn">
+                                    <?php echo e(__('Register'), false); ?>
+
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<?php $__env->stopSection(); ?>
+
+
+<?php echo $__env->make('layouts.app', array_except(get_defined_vars(), array('__data', '__path')))->render(); ?>

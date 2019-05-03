@@ -1,0 +1,132 @@
+*{
+    margin:0;
+    padding: 0;
+}
+html,body{
+    margin:0;
+    padding: 0;
+    width: 1920px;
+}
+/* top */
+._top{
+    line-height: 50px;
+    height: 50px;
+    padding: 0 360px;
+    background-color: #262626;
+}
+._top_left{
+    color: #fff;
+    float: left;
+}
+._top_left span{
+    color: #94df31;
+    margin-left: 10px;
+}
+._top_right{
+    float: right;
+}
+._top_right button{
+    display: inline-block;
+    color: #ffffff;
+    background: none;
+    border: 0;
+} 
+._top_right button:hover{
+    color: #94df31;
+} 
+._top_right_span{
+    background: #4d4d4d;
+    width: 1px;
+    vertical-align: middle;
+    display: inline-block;
+    height: 14px;
+    margin: 0 12px;
+}
+  /* top //////////*/
+  ._top_right div{
+    display: inline-block;
+    font-size: 16px;
+    color: #b8b8b8;
+  }
+  ._top_right_sum span{
+    color: #94df31;
+}
+._top_right_head{
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    margin-right: 10px;
+    vertical-align: middle;
+}
+
+/* 遮罩 */
+body{
+    position: relative;
+}
+#shade{
+    position:absolute;
+    top:0;
+    left:0;
+    z-index:2;
+    width:100%;
+    height:100%;
+    background-color:#000;
+    opacity:0.2;
+    filter: alpha(opacity=30);
+    display:none;
+}
+#modal {
+    position: absolute;
+    z-index: 3;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    margin: 300px auto;
+    display: none;
+    width: 575px;
+    height: 312px;
+    background-color: #ffffff;
+    border-radius: 4px;
+}
+#modal div{
+    height: 40px;
+    line-height: 40px;
+    background-color: #80d60d;
+    border-radius: 4px 4px 0px 0px;
+}
+#modal div span{
+    font-size: 18px;
+    letter-spacing: 1px;
+    color: #ffffff;
+    margin-left: 20px;
+}
+#modal strong{
+    font-size: 30px;
+    letter-spacing: 1px;
+    color: #6eb213;
+    display: block;
+    text-align: center;
+    margin: 60px auto 40px auto;
+}
+#modal p{
+    font-size: 14px;
+    color: #333333;
+    text-align: center;
+    margin-bottom: 35px;
+}
+#modal a{
+    width: 200px;
+    height: 50px;
+    line-height: 50px;
+    background-color: #80d60d;
+    border-radius: 4px;
+    color: #fff;
+    text-align: center;
+    display: block;
+    outline: none;
+    text-decoration: none;
+    font-size: 18px;
+    letter-spacing: 1px;
+    margin: 0 auto;
+}

@@ -1,0 +1,9 @@
+<div class="input-group input-group-sm">
+    <?php $__currentLoopData = $options; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $option => $label): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+        <?php if(!$inline): ?><div class="radio"><?php endif; ?>
+            <label <?php if($inline): ?>class="radio-inline"<?php endif; ?>>
+                <input type="radio" class="<?php echo e($id, false); ?>" name="<?php echo e($name, false); ?>" value="<?php echo e($option, false); ?>" class="minimal" <?php echo e(((string)$option === request($name, is_null($value) ? '' : $value)) ? 'checked' : '', false); ?> />&nbsp;<?php echo e($label, false); ?>&nbsp;&nbsp;
+            </label>
+            <?php if(!$inline): ?></div><?php endif; ?>
+    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+</div>
