@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="stylesheet" href="<?php echo e(asset('css/header.css'), false); ?>">
+    <title>Document</title>
+    <style>
+        #hindex_bkg{
+            background: url(<?php echo e(asset('img/banner.jpg'), false); ?>) no-repeat;
+            height: 240px;
+            background-position: initial;
+            position: relative;
+        }
+
+        .index{
+            height: 1038px;
+            background-color: #f8faf5;
+            text-align: center;
+        }
+        ._main{
+            margin-top: -50px;
+            position: absolute;
+            width: 900px;
+            height: 368px;
+            background-color: #ffffff;
+            border-radius: 8px;
+            display: inline-block;
+            margin-left: -450px;
+        }
+        ._pay_top{
+            height: 50px;
+            line-height: 50px;
+            text-align: left;
+            border-bottom: 1px solid #f8faf5;
+        }
+        ._pay_top span{
+            margin-left: 20px;
+            color: #333333;
+        }
+        ._pay_btm{
+            margin: 30px;
+        }
+        ._pay_btm_code{
+            width: 110px;
+            height: 110px;
+            background-color: #e0e0e0;
+            float: left;
+        }
+        ._pay_btm_code img{
+            width: 110px;
+            height: 110px;
+        }
+        ._pay_btm_text{
+            text-align: left;
+            margin-left: 140px;
+        }
+        ._pay_btm_text>div{
+            line-height: 36px;
+            color: #999;
+
+        }
+        ._pay_btm_text>div span{
+            color: #ff6363;
+            margin-left: 25px;
+        }
+        ._pay_btm_text>div button{
+            width: 62px;
+            height: 24px;
+            background-color: #ffffff;
+            border-radius: 12px;
+            border: solid 1px #3677fd;
+            line-height: 24px;
+            outline: none;
+            color: #3c8fff;
+            float: right;
+        }
+        ._pay_btm_text>div label{
+            color: #333333;
+            margin-left: 25px;
+        }
+        ._pay_btm_text>div input{
+            color: #333333;
+            background: none;
+            border: 0;
+            width: 360px;
+            font-size: 16px;
+            margin-left: 25px;
+            outline: none;
+        }
+        ._pay_btm_tip{
+            text-align: left;
+            margin: 0 30px;
+        }
+        ._pay_btm_tip strong{
+            font-size: 14px;
+            color: #ff3535;
+            line-height: 24px;
+
+        }
+        ._pay_btm_tip div{
+            font-size: 14px;
+            color: #999999;
+            line-height: 24px;
+            letter-spacing: 1px;
+            display: inline;
+        }
+    </style>
+</head>
+<body >
+    <!-- top -->
+    <div class="_top">
+        <div class="_top_left"> Design <span>work</span> </div>
+        <div class="_top_right">
+             <div >余额： <span style="color: #94df31;">0.00000USDT</span>  </div>
+             <span class="_top_right_span"></span>
+             <div > <img class="_top_right_head" src="img/timg.png"> <span style="color: #fff;">sjs.sy556h454</span> </div>
+        </div>
+    </div>
+    <!-- top ////////// -->
+
+    <!-- banner -->
+    <div id="hindex_bkg"></div>
+    <div class="index">
+
+        <div class="_main">
+            <div class="_pay_top"><span>支付</span></div>
+            <div class="_pay_btm">
+                <div class="_pay_btm_code"> <img src="<?php echo e(asset('storage/qrcodes/'.$user->id .'.svg'), false); ?>" alt="二维码"> </div>
+                <div class="_pay_btm_text">
+                    <div> 支付金额  <span><?php echo e($cost, false); ?> <?php echo e(strtoupper($currencySymbol), false); ?></span> </div>
+                    <div> 付款地址  <input name="text" id="text"  value="<?php echo e($walletAddress, false); ?>walletAddress"> <button onclick="myCopy()">复制</button> </div>
+                    <div> 有效时间  <label for=""><?php echo e(date("H小时i分s秒",24 * 3600 + strtotime($user->register_time) - time()), false); ?>后失效 </label> </div>
+                </div>
+
+            </div>
+            <div class="_pay_btm_tip">
+                    <strong>注意：</strong>
+                    <div>您必须发送确切的货币金额。如果您将转账超过所需金额，我们也会接受付款。但是，如果您发送的数量较少系统将无法识别
+                            该交易。如果等待时间过长，请检查转移金额是否正确。如有问题，请联系Alternet客户支持</div>
+                </div>
+        </div>
+    </div>
+
+    <!-- banner //////////-->
+
+</body>
+</html>
+<script src="js/jquery.js"></script>
+<script>
+        function myCopy(){
+        var ele = document.getElementById("text");
+        ele.select();
+        document.execCommand("Copy");
+        alert('复制成功');
+        }
+    </script>

@@ -1,0 +1,10 @@
+<!-- top -->
+<div class="_top">
+    <div class="_top_left"> 链一<span>公排</span> </div>
+    <div class="_top_right">
+        <div >余额： <?php if(Auth::user()->activation_status): ?> <span style="color: #94df31;"><?php echo e(round((Auth::user())->account->{$currencySymbol . "_balance"},3), false); ?><?php echo e(strtoupper($currencySymbol), false); ?></span><?php else: ?> <a style="color: red;text-decoration: none" href="<?php echo e(route('users.pay',['user',Auth::user()]), false); ?>">点此激活</a> <?php endif; ?>  </div>
+        <span class="_top_right_span"></span>
+        <div > <img class="_top_right_head" v-bind:src="avatar" id="top_avatar"> <span style="color: #fff;"><?php echo e(Auth::user()->name, false); ?></span> </div>
+    </div>
+</div>
+<!-- top ////////// -->

@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="stylesheet" href="{{ asset('css/header.css') }}">
+    <title>Document</title>
+    <style>
+        .t_item{
+            background-color: #f8faf5;
+            padding-top: 20px;
+        }
+        .t_item_ser{
+            width: 182px;
+            height: 32px;
+            background-color: #f8faf5;
+            border-radius: 15px;
+            border: solid 1px #e0e0e0;
+            margin-left: 1200px;
+            padding: 0 10px;
+        }
+        .t_item_ser input{
+            font-size: 16px;
+            color: #cccccc;
+            height: 32px;
+            line-height: 32px;
+            outline: none;
+            border: 0;
+            width: 156px;
+            background: none;
+        }
+        .t_item_ser img{
+            width: 16px;
+            height: 17px;
+            float: right;
+            line-height: 32px;
+            margin-top: 7px
+        }
+         table {
+            margin: 0 auto;
+        }
+        td {
+            text-align: center;
+            vertical-align: top;
+            padding: 0;
+        }
+        .First{
+            text-align: center;
+        }
+        .First img{
+            width: 80px;
+            height: 80px;
+            background-color: #ededed;
+            border-radius: 100%;
+            border: solid 1px #94df31;
+        }
+        .First span{
+            display: block;
+            margin: 10px 0;
+            color: #94df31;
+        }
+
+        .First img:hover{
+            box-shadow: 0px 0px 10px 0px rgba(148, 223, 49, 0.56);
+            border: solid 1px #94df31;
+        }
+        ._line_top{
+            height: 75px;
+            width: 2px;
+            background-color:#ededed;
+            margin: 0 auto;
+        }
+        ._line_center{
+            width: 878px;
+            height: 2px;
+            background-color: #ededed;
+            margin: 0 auto;
+        }
+        ._line_down{
+            margin: 0 auto;
+            width: 878px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        ._line_down_text{
+            width: 2px;
+            height: 175px;
+            background-color: #ededed;
+        }
+        ._line_down_do{
+            width: 2px;
+            height: 108px;
+            background-color: #ededed;
+        }
+        .down_r{
+            width: 2px;
+        }
+        ._line_down img{
+            width: 80px;
+            height: 80px;
+            background-color: #ededed;
+            border: solid 1px #ededed;
+            border-radius: 100%;
+            display: block;
+            margin-left: -40px;
+            margin-top: 10px;
+        }
+        ._line_down img:hover{
+            box-shadow: 0px 0px 10px 0px rgba(148, 223, 49, 0.56);
+            border: solid 1px #94df31;
+        }
+        ._line_down span{
+            margin: 10px 0;
+            display: block;
+            margin-left: -20px;
+        }
+        ._line_down span:hover{
+            color: #94df31;
+        }
+        ._sub_across{
+            width: 254px;
+        margin-left: -127px;
+        height: 2px;
+        background-color: #ededed;
+        }
+        ._subDiv{
+            width: 254px;
+            display: flex;
+            justify-content: space-between;
+            margin-left: -127px;
+        }
+        ._subDiv_line div{
+            width: 2px;
+            height: 118px;
+            background-color: #ededed;
+        }
+        #shade{
+            display:block;
+        }
+        #modal{
+            display:block;
+        }
+    </style>
+</head>
+<body >
+    <!-- top -->
+    @include('layouts._top')
+    <!-- top ////////// -->
+
+    <!-- banner -->
+    <div class="t_item" id="rankTree">
+        <div class="t_item_ser"> <input type="text" name="" id=""> <img src="{{ asset('img/ser.png') }}"> </div>
+        <div class="_team ">
+                <div class="First" id="treeRoot"> <img  v-bind:src="getUserAvatar"><span>@{{ user.name }}</span> </div>
+                <div >
+                        <div class="_line_top"></div>
+                        <div class="_line_center">
+                            <div class="center_l"></div>
+                            <div class="center_r"></div>
+                        </div>
+                        <div class="_line_down">
+                            <div class="down_l">
+                                <div class="_line_down_text"></div>
+                                <img  v-bind:src="getSonInfo(getUser('left'))"><span><a style="text-decoration:none " v-bind:href="getSonInfo(getUser('left'),'url')">@{{ getSonInfo(getUser('left'),'name') }}</a></span>
+                                <div class="_line_down_do"></div>
+                                <div>
+                                    <div class="_sub_across"></div>
+                                    <div class="_subDiv">
+                                        <div class="_subDiv_line">
+                                                <div></div>
+                                                <img  v-bind:src="getSonInfo(getUser('left',1))"><span><a style="text-decoration:none " v-bind:href="getSonInfo(getUser('left',1),'url')">@{{ getSonInfo(getUser('left',1),'name') }}</a></span>
+                                        </div>
+                                        <div class="_subDiv_line">
+                                                <div></div>
+                                                <img  v-bind:src="getSonInfo(getUser('left',2))"><span><a style="text-decoration:none " v-bind:href="getSonInfo(getUser('left',2),'url')">@{{ getSonInfo(getUser('left',2),'name') }}</a></span>
+                                        </div>
+                                        <div class="_subDiv_line" style="    width: 2px;">
+                                                <div></div>
+                                                <img   v-bind:src="getSonInfo(getUser('left',3))"><span><a style="text-decoration:none " v-bind:href="getSonInfo(getUser('left',3),'url')">@{{ getSonInfo(getUser('left',3),'name') }}</a></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="down_c">
+                                    <div class="_line_down_text"></div>
+                                    <img  v-bind:src="getSonInfo(getUser('center'))"><span><a style="text-decoration:none " v-bind:href="getSonInfo(getUser('center'),'url')">@{{ getSonInfo(getUser('center'),'name') }}</a></span>
+                                    <div class="_line_down_do"></div>
+                                    <div class="_sub">
+                                            <div class="_sub_across"></div>
+                                            <div class="_subDiv">
+                                                <div class="_subDiv_line">
+                                                        <div></div>
+                                                        <img  v-bind:src="getSonInfo(getUser('center',1))"><span><a style="text-decoration:none " v-bind:href="getSonInfo(getUser('center',1),'url')">@{{ getSonInfo(getUser('center',1),'name') }}</a></span>
+                                                </div>
+                                                <div class="_subDiv_line">
+                                                        <div></div>
+                                                        <img  v-bind:src="getSonInfo(getUser('center',2))"><span><a style="text-decoration:none " v-bind:href="getSonInfo(getUser('center',2),'url')">@{{ getSonInfo(getUser('center',2),'name') }}</a></span>
+                                                </div>
+                                                <div class="_subDiv_line" style="    width: 2px;">
+                                                        <div></div>
+                                                        <img  v-bind:src="getSonInfo(getUser('center',3))"><span><a style="text-decoration:none " v-bind:href="getSonInfo(getUser('center',3),'url')">@{{ getSonInfo(getUser('center',3),'name') }}</a></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                            </div>
+                            <div class="down_r">
+                                    <div class="_line_down_text"></div>
+                                    <img  v-bind:src="getSonInfo(getUser('right'))"><span><a style="text-decoration:none " v-bind:href="getSonInfo(getUser('right'),'url')">@{{ getSonInfo(getUser('right'),'name') }}</a></span>
+                                    <div class="_line_down_do"></div>
+                                    <div class="_sub">
+                                            <div class="_sub_across"></div>
+                                            <div class="_subDiv">
+                                                <div class="_subDiv_line">
+                                                        <div></div>
+                                                        <img  v-bind:src="getSonInfo(getUser('right',1))"><span><a style="text-decoration:none " v-bind:href="getSonInfo(getUser('right',1),'url')">@{{ getSonInfo(getUser('right',1),'name') }}</a></span>
+                                                </div>
+                                                <div class="_subDiv_line">
+                                                        <div></div>
+                                                        <img  v-bind:src="getSonInfo(getUser('right',2))"><span><a style="text-decoration:none " v-bind:href="getSonInfo(getUser('right',2),'url')">@{{ getSonInfo(getUser('right',2),'name') }}</a></span>
+                                                </div>
+                                                <div class="_subDiv_line" style="    width: 2px;">
+                                                        <div></div>
+                                                        <img  v-bind:src="getSonInfo(getUser('right',3))"><span><a style="text-decoration:none " v-bind:href="getSonInfo(getUser('right',3),'url')">@{{ getSonInfo(getUser('right',3),'name') }}</a></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                            </div>
+                        </div>
+                </div>
+        </div>
+    </div>
+    <div id="shade"></div>
+    <div id="modal">
+        <div> <span>开户提示</span> </div>
+        <strong> sjssyh85214whly19062 </strong>
+        <p>该激活码是唯一的需要保存好不要透露给其他人</p>
+        <a id="Close" href="#">知道了</a>
+    </div>
+</body>
+</html>
+<script type="text/javascript" src="{{ asset('js/jquery.js') }}"></script>
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+<script>
+    // 注册成功后  弹出激活码
+    $('#Close').click(function(){
+        $("#shade").hide();
+        $("#modal").hide()
+    });
+</script>
+<script>
+    function getAvatar(user){
+        let avatar;
+        if(typeof user === 'undefined'){
+            return "{{ asset('storage/avatar/unknown.png')}}"
+        }
+        if(typeof user.avatar === "undefined" || user.avatar === null){
+            if(typeof user.sex !== "undefined"){
+                let sex = user.sex;
+                if(sex === '男'){
+                    avatar = "storage/avatar/male.png";
+                }else if(sex === '女'){
+                    avatar = "storage/avatar/female.png";
+                }else{
+                    avatar = "storage/avatar/unknown.png";
+                }
+            }else{
+                avatar = "storage/avatar/unknown.png";
+            }
+        }else{
+            avatar = user.avatar;
+        }
+        avatar  = "{{ asset('')}}" + avatar;
+        return avatar;
+    }
+    let avatar = getAvatar(@json($user->first(['id','name','avatar'])->toArray()));
+    let top_avatar = new Vue({
+        el:'#top_avatar',
+        data:{
+            avatar: avatar
+        }
+    });
+    let rank = new Vue({
+        el:"#rankTree",
+        data:{
+            user:{},
+            left:{root:{},sons:{1:{},2:{},3:{}}},
+            center:{root:{},sons:{1:{},2:{},3:{}}},
+            right:{root:{},sons:{1:{},2:{},3:{}}},
+        },
+        computed:{
+            getUserAvatar:function(){
+                return getAvatar(this.user)
+            }
+        },
+        methods:{
+            //root:left,center,right;position:1,2,3
+            getUser:function (son,position=0) {
+                let user;
+                if(position === 0){
+                    user = this[son].root;
+                }else{
+                    user = this[son].sons[position];
+                }
+                return user;
+            },
+            getSonInfo:function (user,type='avatar') {
+                if(type === 'avatar') {
+                    return getAvatar(user);
+                }else if(type === 'url'){
+                    if(typeof user === 'undefined'  ||  typeof user.url === 'undefined'){
+                        return window.location.href;
+                    }else{
+                        return 'http://' + "{{ $_SERVER['HTTP_HOST'] }}"+ '/rank/'+ user.id;
+                    }
+                }else if(type === 'name'){
+                    if(typeof user === 'undefined'  ||  typeof user.name=== 'undefined'){
+                        return "空位";
+                    }else{
+                        return user.name
+                    }
+                }
+            }
+        }
+    });
+    let userId = window.location.href.split('/').pop().substr(0,1);
+    let url = "/rank/get/" + userId;
+    axios.get(url).then(response =>{
+           let responseData = response.data;
+           rank.$data.user = responseData.user;
+           let arr= ['left','center','right'];
+           for(let key of arr){
+               if(typeof responseData[key] !== 'undefined'){
+                   rank.$data[key].root = responseData[key].root;
+                   if(typeof  responseData[key]['sons'] !== 'undefined' ){
+                       rank.$data[key].sons = responseData[key]['sons'];
+                       for( let i=1;i<=3;i++){
+                           if(typeof  responseData[key]['sons'][i] !== 'undefined' ){
+                               rank.$data[key].sons[i] = responseData[key]['sons'][i];
+                           }
+                       }
+                   }
+               }
+           }
+        }).catch(err => {
+          console.log(err);
+        });
+
+</script>
