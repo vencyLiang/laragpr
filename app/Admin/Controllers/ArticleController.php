@@ -92,7 +92,6 @@ class ArticleController extends Controller
         ];
         $grid->status('文章状态')->switch($status)->sortable();
         $grid->created_at('创建时间');
-        $grid->disableActions();
         $grid->tools(function ($tools) {
             $tools->batch(function ($batch) {
                 $batch->disableDelete();
