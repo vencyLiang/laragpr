@@ -1,0 +1,157 @@
+<?php
+
+namespace App\Admin\Controllers;
+
+use App\Models\Article;
+use App\Models\Admin;
+use App\Http\Controllers\Controller;
+use Encore\Admin\Controllers\HasResourceActions;
+use Encore\Admin\Form;
+use Encore\Admin\Grid;
+use Encore\Admin\Layout\Content;
+use Encore\Admin\Show;
+use Auth;
+
+class ArticleController extends Controller
+{
+    use HasResourceActions;
+
+    /**
+     * Index interface.
+     *
+     * @param Content $content
+     * @return Content
+     */
+    public function index(Content $content)
+    {
+        return $content
+            ->header('文章管理')
+            ->description('文章列表')
+            ->body($this->grid());
+    }
+
+    /**
+     * Show interface.
+     *
+     * @param mixed $id
+     * @param Content $content
+     * @return Content
+     */
+    public function show($id, Content $content)
+    {
+        return $content
+            ->header('文章详情')
+            ->description('文章的内容详情')
+            ->body($this->detail($id));
+    }
+
+    /**
+     * Edit interface.
+     *
+     * @param mixed $id
+     * @param Content $content
+     * @return Content
+     */
+    public function edit($id, Content $content)
+    {
+        return $content
+            ->header('文章编辑')
+            ->description('编辑文章内容')
+            ->body($this->form()->edit($id));
+    }
+
+    /**
+     * Create interface.
+     *
+     * @param Content $content
+     * @return Content
+     */
+    public function create(Content $content)
+    {
+        return $content
+            ->header('新增文章')
+            ->description('文章内容新增')
+            ->body($this->form());
+    }
+
+    /**
+     * Make a grid builder.
+     *
+     * @return Grid
+     */
+    protected function grid()
+    {
+        $grid = new Grid(new Article);
+        $grid->id('Id');
+        $grid->admin_id('发布的管理员')->display(function ($admin_id) {
+            return Admin::find($admin_id)->username;
+        });
+        $grid->title('文章标题')->sortable();
+        $status = [
+            'on'  => ['value' => '1', 'text' => '正常', 'color' => 'success'],
+            'off' => ['value' => '0', 'text' => '禁用', 'color' => 'danger'],
+        ];
+        $grid->status('文章状态')->switch($status)->sortable();
+        $grid->created_at('创建时间');
+        $grid->filter(function (Grid\Filter $filter) {
+            $filter->expand();
+            $filter->disableIdFilter();
+            $filter->where(function ($query) {
+                $query->where('title', 'like', "%{$this->input}%")
+                    ->orWhere('content', 'like', "%{$this->input}%");
+            }, '关键词')->placeholder('标题/内容');
+            $filter->where(function ($query) {
+                $input = $this->input;
+                //whereHas的第一个参数为关联的方法名；
+                $query->whereHas('admin', function ($query) use ($input) {
+                    $query->where('id', $input)->orWhere(function ($query) use ($input) {
+                        $query->where('username', 'like', $input)->orWhere(function ($query) use ($input) {
+                            $query->where('name', 'like', $input);
+                        });
+                    });
+                });
+            }, '发布管理员', 'admin')->placeholder('管理员的ID/用户名/昵称');
+            $filter->between('created_at','发布时间')->datetime();
+            $filter->equal('status','状态')->radio(['' => '全部', 0 => '禁用', 1 => '开放']);
+        });
+        return $grid;
+    }
+
+    /**
+     * Make a show builder.
+     *
+     * @param mixed $id
+     * @return Show
+     */
+    protected function detail($id)
+    {
+        $show = new Show(Article::findOrFail($id));
+        $show->admin('发布者信息', function ($admin) {
+            $admin->setResource('/admin/auth/users');
+            $admin->id();
+            $admin->username();
+            $admin->name();
+        });
+        $show->summary('摘要');
+        $show->content('内容');
+        $show->created_at('发布时间');
+        return $show;
+    }
+
+    /**
+     * Make a form builder.
+     *
+     * @return Form
+     */
+    protected function form()
+    {
+        $form = new Form(new Article);
+        $form->text('title', '标题')->rules('required');
+        $form->display('admin_id', '管理员id')->with(function ($id) {
+            return Auth::guard('admin')->id();
+        });
+        $form->text('summary', '摘要')->rules('required');
+        $form->editor('content','内容')->rules('required');
+        return $form;
+    }
+}

@@ -1,0 +1,267 @@
+<?php
+
+namespace App\Http\Controllers;
+use App\Models\User;
+use App\Models\Article;
+use Illuminate\Support\Facades\Auth;
+use App\Http\Requests\UserRequest;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Http\Request;
+use App\Extras\Task\SystemConfig;
+use SimpleSoftwareIO\QrCode\Facades\QrCode;
+use Response;
+
+class UserController extends Controller{
+    use SystemConfig;
+    private $user;
+    public function __construct()
+    {
+        $this->middleware('auth')->except(['ajax_check_invite_code']);
+        //获取当前登录用户
+        $this->user = Auth::user();
+        self::getConfig();
+    }
+
+    /**ajax验证用户邀请码；
+     * @param Request $request
+     * @return int
+     */
+    protected function ajax_check_invite_code(Request $request){
+        $upInviteCode = $request->input('up_invite_code');
+        if($upInviteCode == ""){
+            return 2;
+        }
+        $res = User::Where('invite_code',$upInviteCode)->first();
+        if($res || ($upInviteCode === PLATFORM_INVITE_CODE) ){
+            return 1;
+        }else{
+            return 0;
+        }
+    }
+
+    /**用户绑定钱包
+     * @param UserRequest $request
+     * @return array
+     */
+    public function bind_user_wallet_address(UserRequest $request){
+        //方法1：$this->user->update($request->all());
+        $validateData = $request->validated();
+        $this->user->user_wallet_address = $validateData['user_wallet_address'];
+        $this->user->withdraw_password = Hash::make($validateData['set_withdraw_password']);
+        $res = $this->user->save();
+        if($res){
+            return ['message' => '绑定提现钱包成功','status' => 200];
+        }else{
+            //系统出错
+            return ['message' => '绑定提现钱包失败','status' => 500];
+        }
+    }
+
+    /**修改提现密码；
+     * @param UserRequest $request
+     * @return array
+     */
+    public function  modify_withdraw_password(UserRequest $request){
+        $validateData = $request->validated();
+        $withdraw_password = $validateData['update_withdraw_password'];
+        if($withdraw_password){
+            $this->user->withdraw_password = $withdraw_password;
+            $res = $this->user->save();
+            if($res){
+                //修改提现密码成功
+                return ['message' => '修改提现密码成功','status' => 200];
+            }else{
+                //系统出错
+                return ['message' => '修改提现密码成功','status' => 500];
+            }
+        }else{
+            //提现密码并未改变；
+            return ['message' => '没有修改提现密码','status' => 200];
+        }
+    }
+
+    /**渲染用户中心页面
+     * @param User $user
+     * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View|\think\response\View
+     * @throws \Illuminate\Auth\Access\AuthorizationException
+     */
+    public function show(User $user){
+        $this->authorize('update', $user);
+        $symbols = [0 => 'usdt', 1 => 'eth'];
+        $currencySymbol = $symbols[CURRENCY];
+        $balance = $user->account->{$currencySymbol . "_balance"};
+        $directNum = User::where(['pid' => $user->id, 'up_invite_code'=> $user->invite_code])->count();
+        $indirectNum = User::where(['up_invite_code' => $user->invite_code, 'activation_status' => 1])->count() - $directNum;
+        return view('users.show',compact(['user','balance','currencySymbol','directNum','indirectNum']));
+    }
+
+    /**用户资料更新
+     * @param UserRequest $request
+     * @param User $user
+     * @return \Illuminate\Http\JsonResponse
+     * @throws \Illuminate\Auth\Access\AuthorizationException
+     */
+    public function  update(UserRequest $request, User $user){
+        $this->authorize('update', $user);
+        $data = $request->validated();
+        if(empty($data['password'])){
+            unset($data['password']);
+        }else{
+            $data['password'] = bcrypt($data['password']);
+        }
+        if(empty($data['update_withdraw_password'])){
+            unset($data['update_withdraw_password']);
+        }else{
+            $data['password'] = bcrypt($data['password']);
+        }
+        $res = $user->update($data);
+        if($res){
+            return response()->json(['msg' => '资料更新成功！'], 200);
+        }else{
+            return response()->json(['msg' => '资料更新失败！'], 403);
+        }
+    }
+
+    /**渲染激活支付页
+     * @param User $user
+     * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View|\think\response\View
+     * @throws \Illuminate\Auth\Access\AuthorizationException
+     */
+    public function pay(User $user){
+        $this->authorize('update', $user);
+        $walletAddress = "";
+        $symbols = [0 => 'usdt', 1 => 'eth'];
+        $currencySymbol = $symbols[CURRENCY];
+        $result = $this->generateAccount($user,$symbols);
+        if($result['status'] == 200){
+            $qrcode = $result['data']['qrcode'];
+            $walletAddress = $result['data']['account'];
+            $time = $result['data']['time'];
+        }elseif(empty($result)){
+            $walletAddress = $user->account->{$currencySymbol."_address"};
+            $qrcode = $user->account->{$currencySymbol."_address_qrcode"};
+            $time = $user->account->{$currencySymbol."_address_time"};
+        }
+        $time = GENERATE_ADDR_INTERVAL + $time - time();
+        $cost = ACTIVATE_COST;
+        return view('users.pay',compact(['user','walletAddress','cost','currencySymbol','qrcode','time']));
+    }
+
+    /**用户提现业务逻辑
+     * @param UserRequest $request
+     * @param User $user
+     * @return array
+     * @throws \Illuminate\Auth\Access\AuthorizationException
+     */
+    public function withdraw(UserRequest $request,User $user){
+        $this->authorize('update', $user);
+        $validation = $request->validated();
+        $data = [ 'user_id' => $user->id ,
+          'from_address'=> $user->account->eth_address,
+          'to_address'=> $validation['withdraw_address'],
+          'num'=> $validation['num'],
+          'transfer_type'=>1,
+          'coin_type'=> 2
+        ];
+        return CoinController::coinTransfer($data);
+    }
+
+
+    /**
+     * 生成用户钱包相关信息（二维码、字符串）
+     * @param User $user
+     * @param array $config
+     * @return array|null
+     * @throws \Illuminate\Auth\Access\AuthorizationException
+     */
+    private  function  generateAccount(User $user, array $config){
+        $this->authorize('update', $user);
+        $symbols = $config;
+        $currencySymbol = $symbols[CURRENCY];
+        $qrcodeUrl = asset('storage/qrcodes/'.$user->id .'.svg');
+        if(empty($user->account) || empty($user->account->{$currencySymbol."_address"}) || time()- $user->account->{$currencySymbol."_address_time" } >= GENERATE_ADDR_INTERVAL){
+            $result = CoinController::generateAddress($user->unique,$currencySymbol);
+            if($result['status'] === 200){
+                $walletAddress = $result['data'];
+                $qrcodePath = dirname(app_path()).DIRECTORY_SEPARATOR."storage/app/public/qrcodes/{$user->id}.svg";
+                QrCode::generate($walletAddress, $qrcodePath);
+                if(empty($user->account)){
+                    $user->account()->create(["{$currencySymbol}_address" => $walletAddress,"{$currencySymbol}_address_qrcode" => asset('storage/qrcodes/'.$user->id .'.svg'),"{$currencySymbol}_address_time" =>($time = time())]);
+                    $user->update(['platform_wallet_address' => $walletAddress]);
+                }else{
+                    $user->account->{$currencySymbol."_address"} = $walletAddress;
+                    $user->account->{$currencySymbol."_address_qrcode"} = $qrcodeUrl;
+                    $user->account->{$currencySymbol."_address_time"} = ($time = time());
+                    $user->platform_wallet_address = $walletAddress;
+                    $user->push();
+                }
+                return['status'=>200 ,'msg'=> 'success','data'=>['qrcode'=>$qrcodeUrl,'account'=>$walletAddress,'time'=>(GENERATE_ADDR_INTERVAL + $time-time())]];
+            }else{
+                return ['status'=> 500 ,'msg'=>'error'];
+            }
+        }
+        return NULL;
+    }
+
+    /**查看激活记录
+     * @param Request $request
+     * @param User $user
+     * @return mixed
+     * @throws \Illuminate\Auth\Access\AuthorizationException
+     */
+    public function getRecs(Request $request,User $user){
+        $this->authorize('update', $user);
+        $data = $request->input();
+        $curPage = $data['page'] ?? 1;
+        $perPage = $data['per'] ?? 10;
+        #方法一：join查询
+       return $user->accountToRec()->where(['transfer_type' => 5 ])->join('users',function($join){
+           $join->on('running_account.user_id','=','users.id');
+       })->select(['running_account.id','running_account.created_at','users.name','running_account.num'])->paginate($perPage,['*'],'page',$curPage)->toJson();
+
+        /*#方法二：关联模型预加载
+       return AccountRec::with(['toUser'=>function($query) use ($user){
+           $query->where('id',$user->id)->select('id');
+       }])->with('user:id,name')->where(['to_uid' => $user->id,'transfer_type' => 5])->select(['user_id','to_uid','num','created_at'])->get();
+        */
+    }
+
+    public function rankPage(User $user){
+        $symbols = [0 => 'usdt', 1 => 'eth'];
+        $currencySymbol = $symbols[CURRENCY];
+        $balance = $user->account->{$currencySymbol . "_balance"};
+        return view('users.rank',compact(['user','balance','currencySymbol']));
+    }
+
+    public function getRank(User $user){
+        $son = ['user'=> $user];
+        $sonNum = $user->sons->count();
+        $array = [ 1 => 'left',2 => 'center',3=>'right'];
+        for($k = 1; $k <= $sonNum;$k++){
+            $i = $array[$k];
+            $son[$i]['root'] = $user->sons()->where('position',$k)->first(['id','name','avatar','sex']);
+            $son[$i]['sons'] =$son[$i]['root']->sons()->select('id','name','sex','avatar','position')->get();
+            $son[$i]['sons'] = collect($son[$i]['sons']->pluck('position'))->combine($son[$i]['sons']);
+        }
+        return response()->json($son);
+    }
+
+    /**
+     * @param Request $request
+     * @param User $user
+     * @return \Illuminate\Http\JsonResponse
+     * @throws \Illuminate\Auth\Access\AuthorizationException
+     */
+    public function getArticles(Request $request, User $user){
+        $this->authorize('update', $user);
+        $data = $request->input();
+        $perPage = $data['per'] ?? 10;
+        $haveReadAidArr = $user->haveReadArticles->pluck('id');
+        $result = Article::with(['admin'=>function($query){
+            $query->select(['id','username','avatar']);
+        }])->where('status','=',1)->whereNotIn('id',$haveReadAidArr)->orderBy('created_at','desc')->limit($perPage)->select(['id','title','summary','created_at'])->get();
+        //dd($result);
+        $user->haveReadArticles()->attach($result->pluck('id'));
+        return Response::json(['count'=> $result->count() ,'data'=> $result->toArray()]);
+    }
+}
