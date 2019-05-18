@@ -12,7 +12,7 @@ class User extends Authenticatable
 
     protected $guarded = [];
 
-    protected $hidden = ['password','remember_token'];
+    protected $hidden = ['password','remember_token','withdraw_password'];
 
     public function __construct(array $attributes = [])
     {

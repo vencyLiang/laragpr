@@ -234,6 +234,7 @@ class UserController extends Controller{
     }
 
     public function rankPage(User $user){
+        $user = $user->first(['id','sex','avatar','name']);
         $symbols = [0 => 'usdt', 1 => 'eth'];
         $currencySymbol = $symbols[CURRENCY];
         $balance = 0;
