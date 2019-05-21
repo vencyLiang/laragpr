@@ -13,12 +13,8 @@
 Auth::routes();
 Route::post('/checkinvite','UserController@ajax_check_invite_code')->name('checkinvite');
 Route::resource('users', 'UserController', ['only' => ['show', 'update', 'edit']]);
-Route::get('/test','TestController@test');
 Route::middleware('auth')->get('/','IndexController@index');
 Route::get('coin/create/{unique?}/{type?}', 'CoinController@generateAddress');
-Route::get('activate/{user}', 'TestController@testActivate');
-Route::get('bonus/{user}/{userPath?}', 'TestController@testBonus');
-Route::get('children/{user}', 'TestController@testChildren');
 Route::get('users/{user}/pay','UserController@pay')->name('users.pay');
 Route::post('form/file_upload', 'RequestController@fileUpload');
 Route::middleware('auth')->post('users/{user}/withdraw','UserController@withdraw');
@@ -28,3 +24,4 @@ Route::get('rank/get/{user}','UserController@getRank')->name('users.getRank');
 Route::get('message/{user}','UserController@getArticles')->name('users.getArticles');
 Route::get('message/have_read/{user}','UserController@setHaveRead')->name('users.setHaveRead');
 Route::get('message/detail/{article}','ArticlesController@articleDetail')->name('articles.detail');
+Route::get('verify/{inviteCode?}','ApiController@verifyInviteCode')->name('verify');

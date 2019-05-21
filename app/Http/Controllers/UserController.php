@@ -234,7 +234,6 @@ class UserController extends Controller{
     }
 
     public function rankPage(User $user){
-        $user = $user->first(['id','sex','avatar','name']);
         $symbols = [0 => 'usdt', 1 => 'eth'];
         $currencySymbol = $symbols[CURRENCY];
         $balance = 0;
@@ -245,7 +244,7 @@ class UserController extends Controller{
     }
 
     public function getRank(User $user){
-        $son = ['user'=> $user->first(['id','sex','avatar','name'])];
+        $son = ['user'=> $user];
         $sonNum = $user->sons->count();
         $array = [ 1 => 'left',2 => 'center',3=>'right'];
         for($k = 1; $k <= $sonNum;$k++){

@@ -1,0 +1,214 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Notifications\Notifiable;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+
+
+class User extends Authenticatable
+{
+    use Notifiable;
+
+    protected $guarded = [];
+
+    protected $hidden = ['password','remember_token','withdraw_password'];
+
+    public function __construct(array $attributes = [])
+    {
+        parent::__construct($attributes);
+    }
+    public function haveReadArticles(){
+        return $this->belongsToMany(Article::class,'have_read_relation','user_id','article_id');
+    }
+
+    public function  setSexAttribute($value){
+        if($value === '男'){
+            return 1;
+        }elseif($value === '女'){
+            return 2;
+        }else{
+            return 0;
+        }
+    }
+
+    public function  getSexAttribute($value){
+        if($value === 1){
+            return '男';
+        }elseif($value === 2){
+            return '女';
+        }else{
+            return '尚未设置';
+        }
+    }
+    public function account(){
+        return $this->hasOne(UserWalletAccount::class,'user_id');
+    }
+
+    public function accountFromRec(){
+        return $this->hasMany(AccountRec::class,'user_id');
+    }
+
+    public function accountToRec(){
+        return $this->hasMany(AccountRec::class,'to_uid');
+    }
+
+    public function activationRec(){
+        return $this->hasOne(ActivationRec::class);
+    }
+    /**获得所有的线内后代；
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany
+     */
+    public function children(){
+        return $this->belongsToMany(User::class,'user_relation','up_uid','uid');
+    }
+
+    /**获得所有的线内前辈；
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany
+     */
+    public function seniors(){
+        return $this->belongsToMany(User::class,'user_relation','uid','up_uid');
+    }
+
+    public function parent(){
+        return $this->hasOne(User::class,'id','pid');
+    }
+
+    public function sons(){
+        return $this->hasMany(User::class,'pid','id');
+    }
+
+    public function becomeChild($user_ids){
+        if (!is_array($user_ids)) {
+            $user_ids= compact('user_ids');
+        }
+        $this->seniors()->sync($user_ids, false);
+    }
+
+    public function isChild($uid){
+        return $this->seniors->contains($uid);
+    }
+
+    /**功能：获取当前用户所有上级用户的id数组；
+     * @param $userPath
+     * @param  $level: 从父代开始取$level代；
+     * @return array
+     */
+    public function  get_all_parentsIdArr($userPath = "",$level = NULL){
+        //获取层级路径字符串
+        if($userPath === "") {
+            $userPath = $this->attributes['path'];
+        }
+        //将层级关系转化为数组；
+        $parentArr = explode('-',$userPath);
+        //最后一个元素表示本身，移除；
+        array_pop($parentArr);
+        //第一个元素值为0，代表平台，移除
+        array_shift($parentArr);
+        foreach ($parentArr as $k=>$v){
+            $parentArr[$k] = (int) $v;
+        }
+        if(!empty($level)){
+            $parentArr = array_slice($parentArr, - $level,NULL,true);
+        }
+        return $parentArr;
+    }
+
+
+    /**功能：获取当前用户所有上级用户collection集合；
+     * @param $userPath
+     * @param  $level: 从父代开始取$level代；
+     * @return mixed
+     */
+    public function get_all_parentsModel($userPath ="",$level = NULL){
+        $parentArr = $this->get_all_parentsIdArr($userPath,$level);
+        $allParentsModel =  self::find($parentArr);
+        return $allParentsModel;
+    }
+
+
+    /**功能：判断该当前用户是否为滑落用户；
+     * @return bool
+     */
+    public function is_down(){
+        $parentArr = $this->get_all_parentsIdArr();
+        //获取上级用户id；
+        $parentUserId = array_pop($parentArr);
+        //获取邀请其注册的用户id；
+        $sendInviteUserId = self::where('invite_code',$this->attributes['up_invite_code'])->first()->id;
+        //如果不是同一个用户
+        if($parentUserId != $sendInviteUserId){
+            return true;
+        }else{
+            return false;
+        }
+    }
+
+    /**查找模型的所有下级用户的id,并按层级顺序整理成形如['level1'=>[id1,id2…]]的形式。
+     * @return array
+     */
+    public function get_all_children(){
+        //查找path中含有其id的，并排除path是其自身id的及path最后一个字符是其自身id的。
+        $allChildrenCollection = self::where('path','<>',"{$this->attributes['id']}")
+            ->where(
+            function($query){
+            $query
+                ->where('path','not like','%'.$this->attributes['id'])
+                ->where(function ($query){
+                    $query->where('path','like','%'.$this->attributes['id'] .'%');
+                });
+            }
+        )->get();
+        //return $allChildrenCollection;
+        if($allChildrenCollection) {
+            $allChildrenPath = $allChildrenCollection->pluck('path')->all();
+            $childrenOrderByLevel = [];
+            foreach ($allChildrenPath as  $childrenPath) {
+                $childrenPath = substr(strstr($childrenPath, "{$this->attributes['id']}"), 2);
+                $childrenPathArr = explode('-', $childrenPath);
+                for($m = 0;$m <= count($childrenPathArr)-1;$m++){
+                        if(!isset($childrenOrderByLevel['level' . ($m + 1)]) || ! in_array($childrenPathArr[$m], $childrenOrderByLevel['level' . ($m + 1)]) ){
+                        $childrenOrderByLevel['level' . ($m + 1)][] = $childrenPathArr[$m];
+                    }
+                }
+            }
+            return $childrenOrderByLevel;
+        }else{
+            return [];
+        }
+    }
+
+    static function getChildren($config=['userArr' => [],'level' => 0,'id' => 0,'where'=>['status'=>1]]){
+        if(!$config['userArr']){
+            $config['userArr'] = self::where($config['where'])->get()->toArray();
+        }
+        $userArr = $config['userArr'];
+        static $resultUserArr = [];
+        foreach ( $userArr as $k=>$userItem) {
+            if ($userItem['pid'] == $config['id']) {
+                $userItem['level'] = $config['level'];
+                unset($userArr[$k]);
+                self::getChildren(['userArr'=>$userArr,'level'=>$config['level']+1,'id'=>$userItem['id'],'where'=>$config['where']]);
+                $resultUserArr[]= $userItem;
+            }
+        }
+        return $resultUserArr;
+    }
+
+    static function getChildrenTree($config=['userArr' => [],'level' => 0,'id' => 0,'where'=>['status'=>1]]){
+        if(!$config['userArr']){
+            $config['userArr'] = self::where($config['where'])->get()->toArray();
+        }
+        $userArr = $config['userArr'];
+        $resultUserArr = [];
+        foreach ( $userArr as $k=>$userItem) {
+            if ($userItem['pid'] == $config['id']) {
+                $userItem['level'] = $config['level'];
+                unset($userArr[$k]);
+                $userItem['children'] = self::getChildrenTree(['userArr'=>$userArr,'level'=>$config['level']+1,'id'=>$userItem['id'],'where'=>$config['where']]);
+                $resultUserArr[]= $userItem;
+            }
+        }
+        return $resultUserArr;
+    }
+}
